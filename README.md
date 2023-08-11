@@ -14,4 +14,5 @@ It runs on Flask, uses HMAC based on SHA3_512 signature for the received data. L
 
 ## Usage
 ```$ pip install -r requirements.txt```
+
 ```$ python3 app.py```
