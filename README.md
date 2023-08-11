@@ -1,2 +1,17 @@
-# zimbra_api
+# Zimbra_api
 Python API for Zimbra Web Client
+
+## Description
+
+API for managing mailboxes on Zimbra Web Client. Requires only the administrator login and password, which are specified in the file config.py.
+It runs on Flask, uses HMAC based on SHA3_512 signature for the received data. Logs received requests and responses
+
+### Routes:
+- create (email, password, name, surname, patronymic, timestamp, hmac_sign) `for create a postmail`
+- deleteByEmail (email, timestamp, hmac_sign) `for delete postmail`
+- getAccountInfoByEmail (email, timestamp, hmac_sign) `to get postmail info`
+- getMessages (email, all, timestamp, hmac_sign) `to get messages from postmail. specify all=false to get last 5 messages`
+
+## Usage
+```$ pip install -r requirements.txt```
+```$ python3 app.py```
