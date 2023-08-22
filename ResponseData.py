@@ -29,11 +29,19 @@ class ResponseData:
     def GetErrorText(self) -> str:
         return self.__ErrorText
     
+    def GetErrorCode(self) -> str:
+        return self.__ErrorCode
+    
     def GetData(self) -> dict:
         return self.__Data
     
+    @staticmethod
     def Get_HMAC_Error() -> dict:
-        return {'statuscode': 500, 'errorcode':"HMAC_ERROR", 'iserror':True, 'data':"" ,'errortext': "incorrect hmac or timestamp"}
+        result = ResponseData()
+        result.SetErrorCode("HMAC_ERROR")
+        result.SetErrorText("Incorrect HMAC sign or timestamp")
+        return result.asdict()
     
     def asdict(self) -> dict:
-        return {'statuscode': self.__StatusCode, 'errorcode':self.__ErrorCode, 'iserror':self.__IsError, 'data':self.__Data ,'errortext': self.__ErrorText}
+        error = {'code': self.GetErrorCode(), 'text': self.GetErrorText()}
+        return {'error': error} if self.IsError() else {'data': self.GetData()}

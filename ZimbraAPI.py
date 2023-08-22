@@ -92,11 +92,11 @@ class ZimbraAPI:
                 for d in tempDataArray:
                     if d['n']=='zimbraIsAdminAccount':
                         data['isAdmin'] = d['_content']
+                data['exists'] = True
                 result.SetData(data)
             except:
-                result.SetStatusCode(500)
-                result.SetErrorCode(jsonResponseData["Body"]["BatchResponse"]["Fault"][0]["Detail"]["Error"]["Code"])
-                result.SetErrorText(jsonResponseData['Body']['BatchResponse']['Fault'][0]['Reason']['Text'])
+                data ['exists'] = False
+                result.SetData(data)
         else:
             result = UpdateAuthDataStatus
 
@@ -122,4 +122,7 @@ class ZimbraAPI:
         Request = re.sub(r'(?<=<csrfToken>)(.*?)(?=<\/csrfToken>)', self.__GetCSRFToken(), Request)
         Response = requests.post(self.Host+URL, Request, cookies=self.__GetCookies())
         
-        return f'STATUS CODE: {UpdateAuthDataStatus}\n' + Response.text
+        result = ResponseData()
+        result.SetData(Response.text)
+        
+        return result

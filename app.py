@@ -44,7 +44,8 @@ def create():
 
     result = Zimbra.CreateAccount(newUser).asdict()
 
-    logging.info(f"Response to IP: {request.remote_addr}. IsError: {result['iserror']}. ErrorCode: {result['errorcode']}. Route: {request.path}. Email: {email}")
+    errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
+    logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
 
     return result
 
@@ -62,7 +63,8 @@ def delete():
     
     result = Zimbra.DeleteAccountByName(email).asdict()
 
-    logging.info(f"Response to IP: {request.remote_addr}. IsError: {result['iserror']}. ErrorCode: {result['errorcode']}. Route: {request.path}. Email: {email}")
+    errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
+    logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
     
     return result
 
@@ -78,7 +80,8 @@ def getInfo():
     
     result = Zimbra.GetAccountInfoByName(email).asdict()
     
-    logging.info(f"Response to IP: {request.remote_addr}. IsError: {result['iserror']}. ErrorCode: {result['errorcode']}. Route: {request.path}. Email: {email}")
+    errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
+    logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
 
     return result
 
@@ -104,7 +107,8 @@ def getMessages():
 
     result = Zimbra.GetMessages(email,allMessages).asdict()
 
-    logging.info(f"Response to IP: {request.remote_addr}. IsError: {result['iserror']}. ErrorCode: {result['errorcode']}. Route: {request.path}. Email: {email}")
+    errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
+    logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
 
     return result
 
