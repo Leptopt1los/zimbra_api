@@ -1,18 +1,11 @@
 #%%
-from flask import Flask, request, jsonify
-from ZimbraAPI import ZimbraAPIUsage, ZimbraUser, ResponseData
+from flask import Flask, request
+from ZimbraAPI import ZimbraAPI, ZimbraUser, ResponseData
 from config import hmac_key
-import logging
+from time import time
 from logging.handlers import RotatingFileHandler
-from time import time, strftime, localtime
+import logging
 import hmac, hashlib
-
-app = Flask(__name__)
-
-app.config['JSON_AS_ASCII'] = False
-
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 
 def get_HMAC(data:list) -> dict:
     timestamp = int(time()*1000)
@@ -23,11 +16,13 @@ def check_HMAC(timestamp:str, data:list, hmac_sign:str) -> bool:
     if abs(current_timestamp-int(timestamp)) > 30: return False
     return (str(hmac.new(hmac_key, f'{timestamp}{"".join(data)}'.encode('utf-8'), hashlib.sha3_512).hexdigest()) == hmac_sign)
 
+app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
 
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
-Zimbra = ZimbraAPIUsage()
-
-
+Zimbra = ZimbraAPI()
 
 @app.route('/create', methods=['POST'])
 def create():
