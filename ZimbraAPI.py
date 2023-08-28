@@ -9,6 +9,7 @@ from AuthData import AuthData
 
 class ZimbraAPI:   
     def __init__(self) -> None:
+        self.__Host = config.Host
         self.__AuthData = AuthData(config.adminUsername, config.adminPassword)
         self.__CreateAccountURL = config.CreateAccountURL
         self.__DeleteAccountURL = config.DeleteAccountURL
@@ -102,14 +103,19 @@ class ZimbraAPI:
 
         return result
 
-    def GetMessages(self, email:str) -> ResponseData:
+    def GetMessages(self, email:str, allMessages:bool) -> ResponseData:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if (not UpdateAuthDataStatus.IsError()):
-            GetMessagesResponse = requests.get(self.Host+f"/home/{email}/inbox?fmt=json", cookies=self.__GetCookies(), verify = False)
+            requestPath = self.__Host+f"/home/{email}/inbox?fmt=json" + ("" if allMessages else "&query=is:unread")
+            GetMessagesResponse = requests.get(requestPath, cookies=self.__GetCookies(), verify = False)
             result.SetStatusCode(GetMessagesResponse.status_code)
             if (GetMessagesResponse.status_code != 200):
                 result.SetErrorText(GetMessagesResponse.text)
+                if GetMessagesResponse.status_code == 404:
+                    result.SetErrorCode("NO_SUCH_MAILBOX")
+                else:
+                    result.SetErrorCode("UNEXPECTED_ERROR")
             else:
                 result.SetData(GetMessagesResponse.text)
         else:
@@ -120,7 +126,7 @@ class ZimbraAPI:
     def ExecuteCustomRequest(self, URL:str, Request: str) -> ResponseData:   #DEBUG METHOD
         UpdateAuthDataStatus = self.__UpdateAuthData()
         Request = re.sub(r'(?<=<csrfToken>)(.*?)(?=<\/csrfToken>)', self.__GetCSRFToken(), Request)
-        Response = requests.post(self.Host+URL, Request, cookies=self.__GetCookies())
+        Response = requests.post(self.__Host+URL, Request, cookies=self.__GetCookies())
         
         result = ResponseData()
         result.SetData(Response.text)

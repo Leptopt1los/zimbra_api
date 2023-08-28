@@ -7,10 +7,6 @@ from logging.handlers import RotatingFileHandler
 import logging
 import hmac, hashlib
 
-def get_HMAC(data:list) -> dict:
-    timestamp = int(time()*1000)
-    return {'hmac':hmac.new(hmac_key, f'{timestamp}{"".join(data)}'.encode('utf-8'), hashlib.sha3_512).hexdigest(), 'timestamp':timestamp}
-
 def check_HMAC(timestamp:str, data:list, hmac_sign:str) -> bool:
     current_timestamp = int(time())
     if abs(current_timestamp-int(timestamp)) > 30: return False
@@ -105,7 +101,7 @@ def getMessages():
     
     allMessages = False if allMessages.lower() in ["false", "0", "none"] else True
 
-    result = Zimbra.GetMessages(email,allMessages).asdict()
+    result = Zimbra.GetMessages(email, allMessages).asdict()
 
     errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
     logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
@@ -124,4 +120,3 @@ if __name__ == '__main__':
 
 
     app.run(host = "0.0.0.0")
-

@@ -8,5 +8,3 @@ CreateAccountURL = Host+"/service/admin/soap/CreateAccountRequest"
 AuthURL = Host+"/service/admin/soap/AuthRequest"
 DeleteAccountURL = Host + "/service/admin/soap/DeleteAccountRequest"
 BatchRequestURL = Host + "/service/admin/soap/BatchRequest"
-
-EmailDomain = "@zimbra.com"
