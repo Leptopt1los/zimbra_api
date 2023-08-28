@@ -27,12 +27,12 @@ def create():
     name:str = request.form.get('name')
     surname:str = request.form.get('surname')
     patronymic:str = request.form.get('patronymic')
-    timestamp:int = request.form.get('timestamp')
+    timestamp:str = request.form.get('timestamp')
     hmac_sign:str = request.form.get('hmac_sign')
 
     logging.info(f"From IP: {request.remote_addr}. Route: {request.path}. Email: {email}")
 
-    if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(request.form.get('timestamp'), [email,password,name,surname,patronymic], request.form.get('hmac_sign'))):
+    if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(timestamp, [email,password,name,surname,patronymic], hmac_sign)):
         logging.warning(f"HMAC error from IP: {request.remote_addr}. Route: {request.path}. Data = {request.form}")
         return ResponseData.Get_HMAC_Error()
     
@@ -53,7 +53,7 @@ def delete():
 
     logging.info(f"From IP: {request.remote_addr}. Route: {request.path}. Email: {email}")
 
-    if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(request.form.get('timestamp'), [email], request.form.get('hmac_sign'))):
+    if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(timestamp, [email], hmac_sign)):
         logging.warning(f"HMAC error from IP: {request.remote_addr}. Route: {request.path}. Data = {request.form}")
         return ResponseData.Get_HMAC_Error()
     
@@ -67,10 +67,10 @@ def delete():
 @app.route('/getAccountInfoByEmail', methods=['POST'])
 def getInfo():  
     email:str = request.form.get('email')
-    timestamp:int = request.form.get('timestamp')
+    timestamp:str = request.form.get('timestamp')
     hmac_sign:str = request.form.get('hmac_sign')
 
-    if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(request.form.get('timestamp'), [email], request.form.get('hmac_sign'))):
+    if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(timestamp, [email], hmac_sign)):
         logging.warning(f"HMAC error from IP: {request.remote_addr}. Route: {request.path}. Data = {request.form}")
         return ResponseData.Get_HMAC_Error()
     
@@ -89,13 +89,13 @@ def hello():
 
 @app.route('/getMessages', methods=['POST'])
 def getMessages():
-    email = request.form.get('email')
-    allMessages = str(request.form.get('all'))
-    timestamp = request.form.get('timestamp')
+    email:str = request.form.get('email')
+    allMessages:str = str(request.form.get('all'))
+    timestamp:str = request.form.get('timestamp')
     hmac_sign:str = request.form.get('hmac_sign')
     data = ''.join(str(x) for x in [email,allMessages] if not x=="None")
 
-    if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(request.form.get('timestamp'), data, request.form.get('hmac_sign'))):
+    if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(timestamp, data, hmac_sign)):
         logging.warning(f"HMAC error from IP: {request.remote_addr}. Route: {request.path}. Data = {request.form}")
         return ResponseData.Get_HMAC_Error()
     
