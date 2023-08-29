@@ -1,6 +1,2 @@
 Flask
 requests
-hmac
-logging
-json
-re

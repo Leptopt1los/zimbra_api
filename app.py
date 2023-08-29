@@ -3,8 +3,6 @@ from flask import Flask, request
 from ZimbraAPI import ZimbraAPI, ZimbraUser, ResponseData
 from config import hmac_key
 from time import time
-from logging.handlers import RotatingFileHandler
-import logging
 import hmac, hashlib
 
 def check_HMAC(timestamp:str, data:list, hmac_sign:str) -> bool:
@@ -14,9 +12,6 @@ def check_HMAC(timestamp:str, data:list, hmac_sign:str) -> bool:
 
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
-
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
 
 Zimbra = ZimbraAPI()
 
@@ -30,61 +25,40 @@ def create():
     timestamp:str = request.form.get('timestamp')
     hmac_sign:str = request.form.get('hmac_sign')
 
-    logging.info(f"From IP: {request.remote_addr}. Route: {request.path}. Email: {email}")
-
     if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(timestamp, [email,password,name,surname,patronymic], hmac_sign)):
-        logging.warning(f"HMAC error from IP: {request.remote_addr}. Route: {request.path}. Data = {request.form}")
         return ResponseData.Get_HMAC_Error()
-    
+
     newUser = ZimbraUser(email, password, name, patronymic, surname)
 
     result = Zimbra.CreateAccount(newUser).asdict()
-
-    errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
-    logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
-
     return result
 
 @app.route('/deleteByEmail', methods=['POST'])
-def delete(): 
+def delete():
     email:str = request.form.get('email')
     timestamp:int = request.form.get('timestamp')
     hmac_sign:str = request.form.get('hmac_sign')
 
-    logging.info(f"From IP: {request.remote_addr}. Route: {request.path}. Email: {email}")
-
     if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(timestamp, [email], hmac_sign)):
-        logging.warning(f"HMAC error from IP: {request.remote_addr}. Route: {request.path}. Data = {request.form}")
         return ResponseData.Get_HMAC_Error()
-    
-    result = Zimbra.DeleteAccountByName(email).asdict()
 
-    errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
-    logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
-    
+    result = Zimbra.DeleteAccountByName(email).asdict()
     return result
 
 @app.route('/getAccountInfoByEmail', methods=['POST'])
-def getInfo():  
+def getInfo():
     email:str = request.form.get('email')
     timestamp:str = request.form.get('timestamp')
     hmac_sign:str = request.form.get('hmac_sign')
 
     if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(timestamp, [email], hmac_sign)):
-        logging.warning(f"HMAC error from IP: {request.remote_addr}. Route: {request.path}. Data = {request.form}")
         return ResponseData.Get_HMAC_Error()
-    
-    result = Zimbra.GetAccountInfoByName(email).asdict()
-    
-    errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
-    logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
 
+    result = Zimbra.GetAccountInfoByName(email).asdict()
     return result
 
 @app.route('/ping', methods=['POST'])
-def hello(): 
-    logging.warning(f"Ping from IP: {request.remote_addr}. Route: {request.path}. Data: {request.form}")
-
+def hello():
     return "hello world"
 
 @app.route('/getMessages', methods=['POST'])
@@ -96,27 +70,12 @@ def getMessages():
     data = ''.join(str(x) for x in [email,allMessages] if not x=="None")
 
     if (timestamp is None) or (hmac_sign is None) or (not check_HMAC(timestamp, data, hmac_sign)):
-        logging.warning(f"HMAC error from IP: {request.remote_addr}. Route: {request.path}. Data = {request.form}")
         return ResponseData.Get_HMAC_Error()
-    
+
     allMessages = False if allMessages.lower() in ["false", "0", "none"] else True
 
     result = Zimbra.GetMessages(email, allMessages).asdict()
-
-    errorInfo = f"ErrorCode: {result['error']['code']}. " if 'error' in result else ""
-    logging.info(f"Response to IP: {request.remote_addr}. {errorInfo}Route: {request.path}. Email: {email}")
-
     return result
 
 if __name__ == '__main__':
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-
-    file_handler = RotatingFileHandler('ZimbraAPI.log', maxBytes=5000000000, backupCount=2)
-    file_handler.setFormatter(formatter)
-
-    root_logger = logging.getLogger('')
-    root_logger.setLevel(logging.INFO)
-    root_logger.addHandler(file_handler)
-
-
     app.run(host = "0.0.0.0")
