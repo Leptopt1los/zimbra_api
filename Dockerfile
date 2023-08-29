@@ -4,5 +4,4 @@ COPY ZimbraAPI.py AuthData.py ZimbraUser.py ResponseData.py config.py requiremen
 COPY app.py /app/
 RUN pip install gunicorn
 RUN pip install -r requirements.txt
-RUN mkdir logs
 CMD ["gunicorn", "--bind", "0.0.0.0:80", "--access-logfile", "-", "app:app"]
