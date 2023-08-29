@@ -57,10 +57,6 @@ def getInfo():
     result = Zimbra.GetAccountInfoByName(email).asdict()
     return result
 
-@app.route('/ping', methods=['POST'])
-def hello():
-    return "hello world"
-
 @app.route('/getMessages', methods=['POST'])
 def getMessages():
     email:str = request.form.get('email')
