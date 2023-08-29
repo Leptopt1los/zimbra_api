@@ -1,7 +1,7 @@
 # %%
 from flask import Flask, request
 from ZimbraAPI import ZimbraAPI, ZimbraUser, ResponseData
-from config import hmac_key
+from config import host, adminUsername, adminPassword, hmac_key
 from time import time
 import hmac, hashlib
 
@@ -25,7 +25,7 @@ def check_HMAC(timestamp: str, data: list, hmac_sign: str) -> bool:
 app = Flask(__name__)
 app.config["JSON_AS_ASCII"] = False
 
-Zimbra = ZimbraAPI()
+Zimbra = ZimbraAPI(host, adminUsername, adminPassword)
 
 
 @app.route("/create", methods=["POST"])
@@ -92,7 +92,7 @@ def getInfo():
 @app.route("/getMessages", methods=["POST"])
 def getMessages():
     email: str = request.form.get("email")
-    allMessages: str = str(request.form.get("all"))
+    unreadOnly: str = str(request.form.get("unreadOnly"))
     timestamp: str = request.form.get("timestamp")
     hmac_sign: str = request.form.get("hmac_sign")
     data = "".join(str(x) for x in [email, allMessages] if not x == "None")
@@ -104,9 +104,9 @@ def getMessages():
     ):
         return ResponseData.Get_HMAC_Error()
 
-    allMessages = False if allMessages.lower() in ["false", "0", "none"] else True
+    unreadOnly = False if unreadOnly.lower() in ["false", "0"] else True
 
-    result = Zimbra.GetMessages(email, allMessages).asdict()
+    result = Zimbra.GetMessages(email, unreadOnly).asdict()
     return result
 
 

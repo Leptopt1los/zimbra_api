@@ -9,10 +9,10 @@ from AuthData import AuthData
 
 
 class ZimbraAPI:
-    def __init__(self) -> None:
-        self.__Host = config.Host
-        self.__AdminHost = __Host + ":7071"
-        self.__AuthData = AuthData(self.__AdminHost, config.adminUsername, config.adminPassword)
+    def __init__(self, host, adminUsername, adminPassword) -> None:
+        self.__Host = host
+        self.__AdminHost = self.__Host + ":7071"
+        self.__AuthData = AuthData(self.__AdminHost, adminUsername, adminPassword)
         self.__CreateAccountURL = (
             self.__AdminHost + "/service/admin/soap/CreateAccountRequest"
         )
@@ -145,14 +145,14 @@ class ZimbraAPI:
 
         return result
 
-    def GetMessages(self, email: str, allMessages: bool) -> ResponseData:
+    def GetMessages(self, email: str, unreadOnly: bool = True) -> ResponseData:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
             requestPath = (
                 self.__AdminHost
                 + f"/home/{email}/inbox?fmt=json"
-                + ("" if allMessages else "&query=is:unread")
+                + ("&query=is:unread" if unreadOnly else "")
             )
             GetMessagesResponse = requests.get(
                 requestPath, cookies=self.__GetCookies(), verify=False
@@ -175,7 +175,6 @@ class ZimbraAPI:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
-            print(1)
             RequestData = f'<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Header><context xmlns="urn:zimbra"><userAgent name="ZimbraWebClient - GC111 (Win)"/><session id="350"/><format type="js"/><csrfToken>{self.__GetCSRFToken()}</csrfToken></context></soap:Header><soap:Body><DelegateAuthRequest xmlns="urn:zimbraAdmin"><account by="name">{email}</account></DelegateAuthRequest></soap:Body></soap:Envelope>'
             PreauthResponse = requests.post(
                 self.__AdminHost + "/service/admin/soap/DelegateAuthRequest",
@@ -220,5 +219,4 @@ class ZimbraAPI:
 
         result = ResponseData()
         result.SetData(Response.text)
-
         return result
