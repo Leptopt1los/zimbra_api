@@ -5,8 +5,8 @@ from ResponseData import ResponseData
 
 
 class AuthData:
-    def __init__(self, AdminHost:str, Username: str, Password: str) -> None:
-        self.__AuthURL = AdminHost+"/service/admin/soap/AuthRequest"
+    def __init__(self, AdminHost: str, Username: str, Password: str) -> None:
+        self.__AuthURL = AdminHost + "/service/admin/soap/AuthRequest"
         self.__Username = Username
         self.__Password = Password
         self.__CSRFToken = ""

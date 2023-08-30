@@ -1,4 +1,4 @@
-Host = "https://10.10.10.10"
+host = "https://10.10.10.10"
 
 adminUsername = "adminlogin"
 adminPassword = "adminpassword"

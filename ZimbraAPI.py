@@ -166,9 +166,9 @@ class ZimbraAPI:
                     result.SetErrorCode("UNEXPECTED_ERROR")
             else:
                 response = json.loads(GetMessagesResponse.text)
-                data = {'messages':[]}
+                data = {"messages": []}
                 if "m" in response:
-                    data["count"] = len(response['m'])
+                    data["count"] = len(response["m"])
                     for message in response["m"][:10]:
                         parsedMessage = {}
                         parsedMessage["date"] = message["d"] // 1000
@@ -181,7 +181,7 @@ class ZimbraAPI:
                         parsedMessage["message"] = message["fr"]
                         data["messages"].append(parsedMessage)
                 else:
-                    data['count'] = 0
+                    data["count"] = 0
                 result.SetData(data)
         else:
             result = UpdateAuthDataStatus
