@@ -95,7 +95,7 @@ def getMessages():
     unreadOnly: str = str(request.form.get("unreadOnly"))
     timestamp: str = request.form.get("timestamp")
     hmac_sign: str = request.form.get("hmac_sign")
-    data = "".join(str(x) for x in [email, allMessages] if not x == "None")
+    data = "".join(str(x) for x in [email, unreadOnly] if not x == "None")
 
     if (
         (timestamp is None)
