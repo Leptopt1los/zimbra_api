@@ -1,7 +1,6 @@
 # %%
 import requests
 import json
-import config
 import re
 from ZimbraUser import ZimbraUser
 from ResponseData import ResponseData
@@ -13,16 +12,6 @@ class ZimbraAPI:
         self.__Host = host
         self.__AdminHost = self.__Host + ":7071"
         self.__AuthData = AuthData(self.__AdminHost, adminUsername, adminPassword)
-        self.__CreateAccountURL = (
-            self.__AdminHost + "/service/admin/soap/CreateAccountRequest"
-        )
-        self.__DeleteAccountURL = (
-            self.__AdminHost + "/service/admin/soap/DeleteAccountRequest"
-        )
-        self.__BatchRequestURL = self.__AdminHost + "/service/admin/soap/BatchRequest"
-        self.__DelegateAuthURL = (
-            self.__AdminHost + "/service/admin/soap/DelegateAuthRequest"
-        )
 
     def __UpdateAuthData(self) -> ResponseData:
         return self.__AuthData.UpdateAuthData()
@@ -33,13 +22,44 @@ class ZimbraAPI:
     def __GetCookies(self) -> dict:
         return self.__AuthData.GetCookies()
 
+    def __WrapInSoapTemplate(self, data: list) -> str:
+        dataStr = "".join(data)
+        return (
+            '<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">'
+                "<soap:Header>"
+                    '<context xmlns="urn:zimbra">'
+                        '<format type="js"/>'
+                        f"<csrfToken>{self.__GetCSRFToken()}</csrfToken>"
+                    "</context>"
+                "</soap:Header>"
+                "<soap:Body>"
+                    f"{dataStr}"
+                "</soap:Body>"
+            "</soap:Envelope>"
+        )
+
     def CreateAccount(self, AccountData: ZimbraUser) -> ResponseData:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
-            RequestData = f'<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Header><context xmlns="urn:zimbra"><userAgent name="ZimbraWebClient - GC107 (Win)"/><format type="js"/><csrfToken>{self.__GetCSRFToken()}</csrfToken></context></soap:Header><soap:Body><CreateAccountRequest xmlns="urn:zimbraAdmin"><name>{AccountData.GetEmail()}</name><password>{AccountData.GetPassword()}</password><a n="zimbraAccountStatus">active</a><a n="displayName">{AccountData.GetSurname()} {AccountData.GetName()} {AccountData.GetPatronymic()}</a><a n="givenName">{AccountData.GetName()}</a><a n="initials">{AccountData.GetPatronymic()}</a><a n="sn">{AccountData.GetSurname()}</a><a n="zimbraPasswordMustChange">FALSE</a></CreateAccountRequest></soap:Body></soap:Envelope>'
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<CreateAccountRequest xmlns="urn:zimbraAdmin">'
+                            f"<name>{AccountData.GetEmail()}</name>"
+                            f"<password>{AccountData.GetPassword()}</password>"
+                            '<a n="zimbraAccountStatus">active</a>'
+                            f'<a n="displayName">{AccountData.GetSurname()} {AccountData.GetName()} {AccountData.GetPatronymic()}</a>'
+                            f'<a n="givenName">{AccountData.GetName()}</a>'
+                            f'<a n="initials">{AccountData.GetPatronymic()}</a>'
+                            f'<a n="sn">{AccountData.GetSurname()}</a>'
+                            '<a n="zimbraPasswordMustChange">FALSE</a>'
+                        "</CreateAccountRequest>"
+                    )
+                ]
+            )
             CreateAccountResponse = requests.post(
-                self.__CreateAccountURL,
+                self.__AdminHost + "/service/admin/soap/CreateAccountRequest",
                 data=RequestData,
                 cookies=self.__GetCookies(),
                 verify=False,
@@ -56,18 +76,27 @@ class ZimbraAPI:
                     ]["Code"]
                 )
             result.SetStatusCode(CreateAccountResponse.status_code)
+            result.SetData({"success": True})
         else:
             result = UpdateAuthDataStatus
 
         return result
 
-    def __DeleteAccountByID(self, AccountID: str) -> ResponseData:
+    def __DeleteAccountByID(self, accountID: str) -> ResponseData:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
-            RequestData = f'<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Header><context xmlns="urn:zimbra"><userAgent name="ZimbraWebClient - GC107 (Win)"/><format type="js"/><csrfToken>{self.__GetCSRFToken()}</csrfToken></context></soap:Header><soap:Body><DeleteAccountRequest xmlns="urn:zimbraAdmin"><id>{AccountID}</id></DeleteAccountRequest></soap:Body></soap:Envelope>'
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<DeleteAccountRequest xmlns="urn:zimbraAdmin">'
+                            f"<id>{accountID}</id>"
+                        "</DeleteAccountRequest>"
+                    )
+                ]
+            )
             DeleteAccountResponse = requests.post(
-                self.__DeleteAccountURL,
+                self.__AdminHost + "/service/admin/soap/DeleteAccountRequest",
                 data=RequestData,
                 cookies=self.__GetCookies(),
                 verify=False,
@@ -84,27 +113,43 @@ class ZimbraAPI:
                         "Error"
                     ]["Code"]
                 )
+            else:
+                result.SetData({"success": True})
         else:
             result = UpdateAuthDataStatus
 
         return result
 
-    def DeleteAccountByName(self, AccountName: str) -> ResponseData:
-        x = self.GetAccountInfoByName(AccountName)
+    def DeleteAccountByName(self, accountName: str) -> ResponseData:
         result = ResponseData()
-        if x.IsError():
-            result = x
+        accInfo = self.GetAccountInfoByName(accountName)
+        if accInfo.IsError():
+            return accInfo
+
+        if accInfo.GetData()["exists"]:
+            result = self.__DeleteAccountByID(accInfo.GetData()["id"])
         else:
-            result = self.__DeleteAccountByID(x.GetData()["id"])
+            result.SetErrorCode("NO_SUCH_MAILBOX")
+
         return result
 
-    def GetAccountInfoByName(self, AccountName: str) -> ResponseData:
+    def GetAccountInfoByName(self, accountName: str) -> ResponseData:
         UpdateAuthDataStatus = self.__UpdateAuthData()
         result = ResponseData()
         if not UpdateAuthDataStatus.IsError():
-            RequestData = f'<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Header><context xmlns="urn:zimbra"><userAgent name="ZimbraWebClient - GC107 (Win)"/><format type="js"/><csrfToken>{self.__GetCSRFToken()}</csrfToken></context></soap:Header><soap:Body><BatchRequest xmlns="urn:zimbra" onerror="continue"><GetAccountRequest xmlns="urn:zimbraAdmin" applyCos="0"><account by="name">{AccountName}</account></GetAccountRequest></BatchRequest></soap:Body></soap:Envelope>'
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<BatchRequest xmlns="urn:zimbra" onerror="continue">'
+                            '<GetAccountRequest xmlns="urn:zimbraAdmin" applyCos="0">'
+                                f'<account by="name">{accountName}</account>'
+                            "</GetAccountRequest>"
+                        "</BatchRequest>"
+                    )
+                ]
+            )
             AccountInfoResponse = requests.post(
-                self.__BatchRequestURL,
+                self.__AdminHost + "/service/admin/soap/BatchRequest",
                 RequestData,
                 cookies=self.__GetCookies(),
                 verify=False,
@@ -192,7 +237,15 @@ class ZimbraAPI:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
-            RequestData = f'<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Header><context xmlns="urn:zimbra"><userAgent name="ZimbraWebClient - GC111 (Win)"/><session id="350"/><format type="js"/><csrfToken>{self.__GetCSRFToken()}</csrfToken></context></soap:Header><soap:Body><DelegateAuthRequest xmlns="urn:zimbraAdmin"><account by="name">{email}</account></DelegateAuthRequest></soap:Body></soap:Envelope>'
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<DelegateAuthRequest xmlns="urn:zimbraAdmin">'
+                            f'<account by="name">{email}</account>'
+                        "</DelegateAuthRequest>"
+                    )
+                ]
+            )
             PreauthResponse = requests.post(
                 self.__AdminHost + "/service/admin/soap/DelegateAuthRequest",
                 data=RequestData,
@@ -204,7 +257,7 @@ class ZimbraAPI:
                 result.SetErrorText(
                     json.loads(PreauthResponse.text)["Body"]["Fault"]["Reason"]["Text"]
                 )
-                result.SetErrorText(
+                result.SetErrorCode(
                     json.loads(PreauthResponse.text)["Body"]["Fault"]["Detail"][
                         "Error"
                     ]["Code"]
@@ -219,6 +272,279 @@ class ZimbraAPI:
                         + f"/service/preauth?authtoken={preauthToken}&isredirect=1"
                     }
                 )
+        else:
+            result = UpdateAuthDataStatus
+        return result
+
+    def CreateDistributionList(
+        self,
+        name: str,
+        displayName: str,
+        description: str,
+        subscriptionPolicy: str = "APPROVAL",
+        unsubscriptionPolicy: str = "ACCEPT",
+    ) -> ResponseData:
+        result = ResponseData()
+        displayName = displayName.encode("ascii", errors="xmlcharrefreplace").decode()
+        description = description.encode("ascii", errors="xmlcharrefreplace").decode()
+        UpdateAuthDataStatus = self.__UpdateAuthData()
+        if not UpdateAuthDataStatus.IsError():
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<CreateDistributionListRequest xmlns="urn:zimbraAdmin">'
+                            f"<name>{name}</name>"
+                            '<a n="zimbraMailStatus">enabled</a>'
+                            f'<a n="displayName">{displayName}</a>'
+                            f'<a n="description">{description}</a>'
+                            f'<a n="zimbraDistributionListSubscriptionPolicy">{subscriptionPolicy}</a>'
+                            f'<a n="zimbraDistributionListUnsubscriptionPolicy">{unsubscriptionPolicy}</a>'
+                        "</CreateDistributionListRequest>"
+                    )
+                ]
+            )
+            CreateDistrListResponse = requests.post(
+                self.__AdminHost + "/service/admin/soap/CreateDistributionListRequest",
+                data=RequestData,
+                cookies=self.__GetCookies(),
+                verify=False,
+            )
+            result.SetStatusCode(CreateDistrListResponse.status_code)
+            if CreateDistrListResponse.status_code != 200:
+                result.SetErrorText(
+                    json.loads(CreateDistrListResponse.text)["Body"]["Fault"]["Reason"][
+                        "Text"
+                    ]
+                )
+                result.SetErrorCode(
+                    json.loads(CreateDistrListResponse.text)["Body"]["Fault"]["Detail"][
+                        "Error"
+                    ]["Code"]
+                )
+            else:
+                id = json.loads(CreateDistrListResponse.text)["Body"][
+                    "CreateDistributionListResponse"
+                ]["dl"][0]["id"]
+                result.SetData({"id": id})
+        else:
+            result = UpdateAuthDataStatus
+        return result
+
+    def DeleteDistributionList(self, distrListID: str) -> ResponseData:
+        result = ResponseData()
+        UpdateAuthDataStatus = self.__UpdateAuthData()
+        if not UpdateAuthDataStatus.IsError():
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<DeleteDistributionListRequest xmlns="urn:zimbraAdmin">'
+                            f"<id>{distrListID}</id>"
+                        "</DeleteDistributionListRequest>"
+                    )
+                ]
+            )
+            DeleteDistrListResponse = requests.post(
+                self.__AdminHost + "/service/admin/soap/DeleteDistributionListRequest",
+                data=RequestData,
+                cookies=self.__GetCookies(),
+                verify=False,
+            )
+            result.SetStatusCode(DeleteDistrListResponse.status_code)
+            if DeleteDistrListResponse.status_code != 200:
+                result.SetErrorText(
+                    json.loads(DeleteDistrListResponse.text)["Body"]["Fault"]["Reason"][
+                        "Text"
+                    ]
+                )
+                result.SetErrorCode(
+                    json.loads(DeleteDistrListResponse.text)["Body"]["Fault"]["Detail"][
+                        "Error"
+                    ]["Code"]
+                )
+            else:
+                result.SetData({"success": True})
+        else:
+            result = UpdateAuthDataStatus
+        return result
+
+    def GetDistributionLists(self) -> ResponseData:
+        result = ResponseData()
+        UpdateAuthDataStatus = self.__UpdateAuthData()
+        if not UpdateAuthDataStatus.IsError():
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<SearchDirectoryRequest xmlns="urn:zimbraAdmin" offset="0" sortBy="name" sortAscending="1" applyCos="false" applyConfig="false" attrs="displayName,uid,description" types="distributionlists,dynamicgroups">'
+                            "<query>(&amp;(!(zimbraIsSystemAccount=TRUE)))</query>"
+                        "</SearchDirectoryRequest>"
+                    )
+                ]
+            )
+            GetDistrListsResponse = requests.post(
+                self.__AdminHost + "/service/admin/soap/SearchDirectoryRequest",
+                data=RequestData,
+                cookies=self.__GetCookies(),
+                verify=False,
+            )
+            result.SetStatusCode(GetDistrListsResponse.status_code)
+            if GetDistrListsResponse.status_code != 200:
+                result.SetErrorText(
+                    json.loads(GetDistrListsResponse.text)["Body"]["Fault"]["Reason"][
+                        "Text"
+                    ]
+                )
+                result.SetErrorCode(
+                    json.loads(GetDistrListsResponse.text)["Body"]["Fault"]["Detail"][
+                        "Error"
+                    ]["Code"]
+                )
+            else:
+                data = []
+                try:
+                    jsonResp = json.loads(GetDistrListsResponse.text)["Body"][
+                        "SearchDirectoryResponse"
+                    ]["dl"]
+                    for distrList in jsonResp:
+                        bDistrList = {}
+                        bDistrList["name"] = distrList["name"]
+                        bDistrList["id"] = distrList["id"]
+                        for attr in distrList["a"]:
+                            bDistrList[attr["n"]] = attr["_content"]
+                        if "owners" in distrList:
+                            bDistrList["owner"] = distrList["owners"][0]["owner"][0]
+                        data.append(bDistrList)
+                except:
+                    pass
+                result.SetData(data)
+        else:
+            result = UpdateAuthDataStatus
+        return result
+
+    def AddDistributionListMembers(
+        self, distrListID: str, usersEmail: list
+    ) -> ResponseData:
+        result = ResponseData()
+        UpdateAuthDataStatus = self.__UpdateAuthData()
+        if not UpdateAuthDataStatus.IsError():
+            usersRequestStr = ""
+            for user in usersEmail:
+                usersRequestStr += f"<dlm>{user}</dlm>"
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<AddDistributionListMemberRequest xmlns="urn:zimbraAdmin">'
+                            f"<id>{distrListID}</id>"
+                            f"{usersRequestStr}"
+                        "</AddDistributionListMemberRequest>"
+                    )
+                ]
+            )
+            AddDistrListMembersResponse = requests.post(
+                self.__AdminHost
+                + "/service/admin/soap/AddDistributionListMemberRequest",
+                data=RequestData,
+                cookies=self.__GetCookies(),
+                verify=False,
+            )
+            result.SetStatusCode(AddDistrListMembersResponse.status_code)
+            if AddDistrListMembersResponse.status_code != 200:
+                result.SetErrorText(
+                    json.loads(AddDistrListMembersResponse.text)["Body"]["Fault"][
+                        "Reason"
+                    ]["Text"]
+                )
+                result.SetErrorCode(
+                    json.loads(AddDistrListMembersResponse.text)["Body"]["Fault"][
+                        "Detail"
+                    ]["Error"]["Code"]
+                )
+            else:
+                result.SetData({"success": True})
+        else:
+            result = UpdateAuthDataStatus
+        return result
+
+    def RemoveDistributionListMembers(
+        self, distrListID: str, usersEmail: list
+    ) -> ResponseData:
+        result = ResponseData()
+        UpdateAuthDataStatus = self.__UpdateAuthData()
+        if not UpdateAuthDataStatus.IsError():
+            usersRequestStr = ""
+            for user in usersEmail:
+                usersRequestStr += f"<dlm>{user}</dlm>"
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<RemoveDistributionListMemberRequest xmlns="urn:zimbraAdmin">'
+                            f"<id>{distrListID}</id>"
+                            f"{usersRequestStr}"
+                        "</RemoveDistributionListMemberRequest>"
+                    )
+                ]
+            )
+            AddDistrListMembersResponse = requests.post(
+                self.__AdminHost
+                + "/service/admin/soap/RemoveDistributionListMemberRequest",
+                data=RequestData,
+                cookies=self.__GetCookies(),
+                verify=False,
+            )
+            result.SetStatusCode(AddDistrListMembersResponse.status_code)
+            if AddDistrListMembersResponse.status_code != 200:
+                result.SetErrorText(
+                    json.loads(AddDistrListMembersResponse.text)["Body"]["Fault"][
+                        "Reason"
+                    ]["Text"]
+                )
+                result.SetErrorCode(
+                    json.loads(AddDistrListMembersResponse.text)["Body"]["Fault"][
+                        "Detail"
+                    ]["Error"]["Code"]
+                )
+            else:
+                result.SetData({"success": True})
+        else:
+            result = UpdateAuthDataStatus
+        return result
+
+    def RenameDistributionList(self, distrListID: str, newName: str) -> ResponseData:
+        result = ResponseData()
+        UpdateAuthDataStatus = self.__UpdateAuthData()
+        if not UpdateAuthDataStatus.IsError():
+            RequestData = self.__WrapInSoapTemplate(
+                [
+                    (
+                        '<RenameDistributionListRequest xmlns="urn:zimbraAdmin">'
+                            f"<id>{distrListID}</id>"
+                            f"<newName>{newName}</newName>"
+                        f"</RenameDistributionListRequest>"
+                    )
+                ]
+            )
+            CreateDistrListResponse = requests.post(
+                self.__AdminHost + "/service/admin/soap/RenameDistributionListRequest",
+                data=RequestData,
+                cookies=self.__GetCookies(),
+                verify=False,
+            )
+            result.SetStatusCode(CreateDistrListResponse.status_code)
+            if CreateDistrListResponse.status_code != 200:
+                result.SetErrorText(
+                    json.loads(CreateDistrListResponse.text)["Body"]["Fault"]["Reason"][
+                        "Text"
+                    ]
+                )
+                result.SetErrorCode(
+                    json.loads(CreateDistrListResponse.text)["Body"]["Fault"]["Detail"][
+                        "Error"
+                    ]["Code"]
+                )
+            else:
+                id = json.loads(CreateDistrListResponse.text)["Body"][
+                    "CreateDistributionListResponse"
+                ]["dl"][0]["id"]
+                result.SetData({"id": id})
         else:
             result = UpdateAuthDataStatus
         return result
