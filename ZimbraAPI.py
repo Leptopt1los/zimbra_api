@@ -101,7 +101,7 @@ class ZimbraAPI:
                 [
                     (
                         '<DeleteAccountRequest xmlns="urn:zimbraAdmin">'
-                        f"<id>{accountID}</id>"
+                            f"<id>{accountID}</id>"
                         "</DeleteAccountRequest>"
                     )
                 ]
