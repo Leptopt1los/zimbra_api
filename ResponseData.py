@@ -36,11 +36,18 @@ class ResponseData:
         return self.__Data
 
     @staticmethod
-    def Get_HMAC_Error() -> dict:
+    def GetHMACError():
         result = ResponseData()
         result.SetErrorCode("HMAC_ERROR")
         result.SetErrorText("Incorrect HMAC sign or timestamp")
-        return result.asdict()
+        return result
+
+    @staticmethod
+    def GetMissingDataError():
+        result = ResponseData()
+        result.SetErrorCode("MISSING_DATA")
+        result.SetErrorText("Some request data missing")
+        return result
 
     def asdict(self) -> dict:
         error = {"code": self.GetErrorCode(), "text": self.GetErrorText()}

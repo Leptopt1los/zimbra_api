@@ -2,7 +2,6 @@
 import requests
 import json
 import re
-from ZimbraUser import ZimbraUser
 from ResponseData import ResponseData
 from AuthData import AuthData
 
@@ -38,7 +37,10 @@ class ZimbraAPI:
             "</soap:Envelope>"
         )
 
-    def CreateAccount(self, AccountData: ZimbraUser) -> ResponseData:
+    def CreateAccount(self, accountName:str, password:str, name:str, surname:str, patronymic:str) -> ResponseData:
+        name = name.encode("ascii", errors="xmlcharrefreplace").decode()
+        surname = surname.encode("ascii", errors="xmlcharrefreplace").decode()
+        patronymic = patronymic.encode("ascii", errors="xmlcharrefreplace").decode()
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
@@ -46,13 +48,13 @@ class ZimbraAPI:
                 [
                     (
                         '<CreateAccountRequest xmlns="urn:zimbraAdmin">'
-                            f"<name>{AccountData.GetEmail()}</name>"
-                            f"<password>{AccountData.GetPassword()}</password>"
+                            f"<name>{accountName}</name>"
+                            f"<password>{password}</password>"
                             '<a n="zimbraAccountStatus">active</a>'
-                            f'<a n="displayName">{AccountData.GetSurname()} {AccountData.GetName()} {AccountData.GetPatronymic()}</a>'
-                            f'<a n="givenName">{AccountData.GetName()}</a>'
-                            f'<a n="initials">{AccountData.GetPatronymic()}</a>'
-                            f'<a n="sn">{AccountData.GetSurname()}</a>'
+                            f'<a n="displayName">{surname} {name} {patronymic}</a>'
+                            f'<a n="givenName">{name}</a>'
+                            f'<a n="initials">{patronymic}</a>'
+                            f'<a n="sn">{surname}</a>'
                             '<a n="zimbraPasswordMustChange">FALSE</a>'
                         "</CreateAccountRequest>"
                     )
@@ -82,15 +84,24 @@ class ZimbraAPI:
 
         return result
 
-    def __DeleteAccountByID(self, accountID: str) -> ResponseData:
+    def DeleteAccount(self, accountID: str = "", accountName: str = "") -> ResponseData:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
+            if accountID == "":
+                accInfo = self.GetAccountInfoByName(accountName)
+                if accInfo.IsError():
+                    return accInfo
+                if not accInfo.GetData()["exists"]:
+                    result.SetErrorCode("NO_SUCH_MAILBOX")
+                    return result
+                accountID = accInfo.GetData()['id']
+
             RequestData = self.__WrapInSoapTemplate(
                 [
                     (
                         '<DeleteAccountRequest xmlns="urn:zimbraAdmin">'
-                            f"<id>{accountID}</id>"
+                        f"<id>{accountID}</id>"
                         "</DeleteAccountRequest>"
                     )
                 ]
@@ -117,19 +128,6 @@ class ZimbraAPI:
                 result.SetData({"success": True})
         else:
             result = UpdateAuthDataStatus
-
-        return result
-
-    def DeleteAccountByName(self, accountName: str) -> ResponseData:
-        result = ResponseData()
-        accInfo = self.GetAccountInfoByName(accountName)
-        if accInfo.IsError():
-            return accInfo
-
-        if accInfo.GetData()["exists"]:
-            result = self.__DeleteAccountByID(accInfo.GetData()["id"])
-        else:
-            result.SetErrorCode("NO_SUCH_MAILBOX")
 
         return result
 
@@ -280,7 +278,7 @@ class ZimbraAPI:
         self,
         name: str,
         displayName: str,
-        description: str,
+        description: str = "",
         subscriptionPolicy: str = "APPROVAL",
         unsubscriptionPolicy: str = "ACCEPT",
     ) -> ResponseData:
@@ -330,10 +328,15 @@ class ZimbraAPI:
             result = UpdateAuthDataStatus
         return result
 
-    def DeleteDistributionList(self, distrListID: str) -> ResponseData:
+    def DeleteDistributionList(
+        self, distrListID: str = "", distrListName: str = ""
+    ) -> ResponseData:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
+            if distrListID == "":
+                distrListID = self.GetDistributionLists().GetData()[distrListName]["id"]
+
             RequestData = self.__WrapInSoapTemplate(
                 [
                     (
@@ -399,20 +402,19 @@ class ZimbraAPI:
                     ]["Code"]
                 )
             else:
-                data = []
+                data = dict()
                 try:
                     jsonResp = json.loads(GetDistrListsResponse.text)["Body"][
                         "SearchDirectoryResponse"
                     ]["dl"]
                     for distrList in jsonResp:
                         bDistrList = {}
-                        bDistrList["name"] = distrList["name"]
                         bDistrList["id"] = distrList["id"]
                         for attr in distrList["a"]:
                             bDistrList[attr["n"]] = attr["_content"]
                         if "owners" in distrList:
                             bDistrList["owner"] = distrList["owners"][0]["owner"][0]
-                        data.append(bDistrList)
+                        data[distrList["name"]] = bDistrList
                 except:
                     pass
                 result.SetData(data)
@@ -421,13 +423,16 @@ class ZimbraAPI:
         return result
 
     def AddDistributionListMembers(
-        self, distrListID: str, usersEmail: list
+        self, userEmails: list, distrListID: str = "", distrListName: str = ""
     ) -> ResponseData:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
+            if distrListID == "":
+                distrListID = self.GetDistributionLists().GetData()[distrListName]["id"]
+
             usersRequestStr = ""
-            for user in usersEmail:
+            for user in userEmails:
                 usersRequestStr += f"<dlm>{user}</dlm>"
             RequestData = self.__WrapInSoapTemplate(
                 [
@@ -508,7 +513,7 @@ class ZimbraAPI:
             result = UpdateAuthDataStatus
         return result
 
-    def RenameDistributionList(self, distrListID: str, newName: str) -> ResponseData:
+    def __RenameDistributionList(self, distrListID: str, newName: str) -> ResponseData:
         result = ResponseData()
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if not UpdateAuthDataStatus.IsError():
