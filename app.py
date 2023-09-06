@@ -81,18 +81,19 @@ def DeleteAccount():
 def GetAccountInfo():
     data = request.json
 
-    accountName: str = data.get("accountName")
+    accountName: str = data.get("accountName", "")
+    accountID: str = data.get("accountID", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
 
-    if None in [accountName, timestamp, hmac_sign]:
+    if (None in [timestamp, hmac_sign]) or (accountName == accountID == ""):
         return ResponseData.GetMissingDataError().asdict()
 
     if not check_HMAC(data):
         return ResponseData.GetHMACError().asdict()
 
-    result = Zimbra.GetAccountInfoByName(accountName).asdict()
+    result = Zimbra.GetAccountInfo(accountName, accountID).asdict()
     return result
 
 

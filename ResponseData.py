@@ -1,13 +1,9 @@
 class ResponseData:
     def __init__(self) -> None:
-        self.__StatusCode = 200
         self.__ErrorText = None
         self.__ErrorCode = None
         self.__IsError = False
         self.__Data = None
-
-    def SetStatusCode(self, code: int) -> None:
-        self.__StatusCode = code
 
     def SetErrorText(self, errorText: str) -> None:
         self.__ErrorText = errorText
@@ -19,9 +15,6 @@ class ResponseData:
 
     def SetData(self, data: dict) -> None:
         self.__Data = data
-
-    def GetStatusCode(self) -> int:
-        return self.__StatusCode
 
     def IsError(self) -> bool:
         return self.__IsError
