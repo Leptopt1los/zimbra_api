@@ -32,6 +32,9 @@ app.config["JSON_AS_ASCII"] = False
 Zimbra = ZimbraAPI(host, adminUsername, adminPassword)
 
 
+################################################## ACCOUNT MANAGEMENT ##################################################
+
+
 @app.route("/createAccount", methods=["POST"])
 def CreateAccount():
     data = request.json
@@ -81,20 +84,43 @@ def DeleteAccount():
 def GetAccountInfo():
     data = request.json
 
-    accountName: str = data.get("accountName", "")
     accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
 
-    if (None in [timestamp, hmac_sign]) or (accountName == accountID == ""):
+    if (None in [timestamp, hmac_sign]) or (accountID == accountName == ""):
         return ResponseData.GetMissingDataError().asdict()
 
     if not check_HMAC(data):
         return ResponseData.GetHMACError().asdict()
 
-    result = Zimbra.GetAccountInfo(accountName, accountID).asdict()
+    result = Zimbra.GetAccountInfo(accountID, accountName).asdict()
     return result
+
+
+@app.route("/getAccountMembership", methods=["POST"])
+def GetAccountMembership():
+    data = request.json
+
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if (None in [timestamp, hmac_sign]) or (accountID == accountName == ""):
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.GetAccountMembership(accountID, accountName).asdict()
+    return result
+
+
+################################################## MAILBOX MANAGEMENT ##################################################
 
 
 @app.route("/getMessages", methods=["POST"])
@@ -121,19 +147,25 @@ def GetMessages():
 def GetPreauthLink():
     data = request.json
 
-    accountName: str = data.get("accountName")
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
 
-    if None in [accountName, timestamp, hmac_sign]:
+    if (None in [accountName, timestamp, hmac_sign]) or (
+        accountID == accountName == ""
+    ):
         return ResponseData.GetMissingDataError().asdict()
 
     if not check_HMAC(data):
         return ResponseData.GetHMACError().asdict()
 
-    result = Zimbra.GetPreauthLink(accountName).asdict()
+    result = Zimbra.GetPreauthLink(accountID, accountName).asdict()
     return result
+
+
+################################################## DISTRIBUTION LIST MANAGEMENT ##################################################
 
 
 @app.route("/getDistributionLists", methods=["POST"])
@@ -150,6 +182,46 @@ def GetDistributionLists():
         return ResponseData.GetHMACError().asdict()
 
     result = Zimbra.GetDistributionLists().asdict()
+    return result
+
+
+@app.route("/getDistributionList", methods=["POST"])
+def GetDistributionLists():
+    data = request.json
+
+    distrListID = data.get("distrListID")
+    distrListName = data.get("distrListName")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if (None in [timestamp, hmac_sign]) and (distrListID == distrListName == ""):
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.GetDistributionList(distrListID, distrListName).asdict()
+    return result
+
+
+@app.route("/getDistributionListMembership", methods=["POST"])
+def GetDistributionListMembership():
+    data = request.json
+
+    distrListID = data.get("distrListID")
+    distrListName = data.get("distrListName")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if (None in [timestamp, hmac_sign]) or (distrListID == distrListName == ""):
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.GetDistributionListMembership(distrListID, distrListName).asdict()
     return result
 
 
