@@ -38,8 +38,8 @@ class AuthData:
             result.SetErrorText(str(e))
             return result
 
-        self.__AuthToken = AuthResponse.cookies.get(["ZM_ADMIN_AUTH_TOKEN"])
-        self.__CSRFToken = AuthResponse.headers.get(["X-Zimbra-Csrf-Token"])
+        self.__AuthToken = AuthResponse.cookies.get("ZM_ADMIN_AUTH_TOKEN")
+        self.__CSRFToken = AuthResponse.headers.get("X-Zimbra-Csrf-Token")
 
         if None in (self.__AuthToken, self.__CSRFToken):
             jsonResponseData = json.loads(AuthResponse.text)["Body"]
