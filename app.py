@@ -43,7 +43,7 @@ def CreateAccount():
     password: str = data.get("password")
     name: str = data.get("name")
     surname: str = data.get("surname")
-    patronymic: str = data.get("patronymic", default="")
+    patronymic: str = data.get("patronymic", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -64,8 +64,8 @@ def CreateAccount():
 def DeleteAccount():
     data = request.json
 
-    accountID: str = data.get("accountID", default="")
-    accountName: str = data.get("accountName", default="")
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -84,8 +84,8 @@ def DeleteAccount():
 def GetAccountInfo():
     data = request.json
 
-    accountID: str = data.get("accountID", default="")
-    accountName: str = data.get("accountName", default="")
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -104,8 +104,8 @@ def GetAccountInfo():
 def GetAccountMembership():
     data = request.json
 
-    accountID: str = data.get("accountID", default="")
-    accountName: str = data.get("accountName", default="")
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -128,7 +128,7 @@ def GetMessages():
     data = request.json
 
     accountName: str = data.get("accountName")
-    unreadOnly: str = str(data.get("unreadOnly", default=True))
+    unreadOnly: bool = data.get("unreadOnly", True)
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -147,8 +147,8 @@ def GetMessages():
 def GetPreauthLink():
     data = request.json
 
-    accountID: str = data.get("accountID", default="")
-    accountName: str = data.get("accountName", default="")
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -189,8 +189,8 @@ def GetDistributionLists():
 def GetDistributionList():
     data = request.json
 
-    distrListID = data.get("distrListID", default="")
-    distrListName = data.get("distrListName", default="")
+    distrListID: str = data.get("distrListID", "")
+    distrListName: str = data.get("distrListName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -209,8 +209,8 @@ def GetDistributionList():
 def GetDistributionListMembership():
     data = request.json
 
-    distrListID = data.get("distrListID", default="")
-    distrListName = data.get("distrListName", default="")
+    distrListID: str = data.get("distrListID", "")
+    distrListName: str = data.get("distrListName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -230,10 +230,10 @@ def CreateDistributionList():
     data = request.json
 
     name: str = data.get("name")
-    displayName: str = data.get("displayName", default="")
-    description: str = data.get("description", default="")
-    subscriptionPolicy: str = data.get("subscriptionPolicy", default="APPROVAL")
-    unsubscriptionPolicy: str = data.get("unsubscriptionPolicy", default="ACCEPT")
+    displayName: str = data.get("displayName", "")
+    description: str = data.get("description", "")
+    subscriptionPolicy: str = data.get("subscriptionPolicy", "APPROVAL")
+    unsubscriptionPolicy: str = data.get("unsubscriptionPolicy", "ACCEPT")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -259,8 +259,8 @@ def CreateDistributionList():
 def DeleteDistributionListByID():
     data = request.json
 
-    distrListID: str = data.get("distrListID", default="")
-    distrListName: str = data.get("distrListName", default="")
+    distrListID: str = data.get("distrListID", "")
+    distrListName: str = data.get("distrListName", "")
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -279,8 +279,8 @@ def DeleteDistributionListByID():
 def AddDistributionListMembers():
     data = request.json
 
-    distrListID: str = data.get("distrListID", default="")
-    distrListName: str = data.get("distrListName", default="")
+    distrListID: str = data.get("distrListID", "")
+    distrListName: str = data.get("distrListName", "")
     userEmails: list = data.get("userEmails")
 
     timestamp: str = data.get("timestamp")
@@ -304,8 +304,8 @@ def AddDistributionListMembers():
 def RemoveDistributionListMembers():
     data = request.json
 
-    distrListID: str = data.get("distrListID", default="")
-    distrListName: str = data.get("distrListName", default="")
+    distrListID: str = data.get("distrListID", "")
+    distrListName: str = data.get("distrListName", "")
     userEmails: list = data.get("userEmails")
 
     timestamp: str = data.get("timestamp")
