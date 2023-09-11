@@ -186,7 +186,7 @@ def GetDistributionLists():
 
 
 @app.route("/getDistributionList", methods=["POST"])
-def GetDistributionLists():
+def GetDistributionList():
     data = request.json
 
     distrListID = data.get("distrListID", default="")
