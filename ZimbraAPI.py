@@ -93,7 +93,7 @@ class ZimbraAPI:
         result = ResponseData()
 
         if accountID == "":
-            accInfo = self.GetAccountInfoByName(accountName)
+            accInfo = self.GetAccountInfo(accountName=accountName)
             if accInfo.IsError():
                 return accInfo
             if not accInfo.GetData()["exists"]:
