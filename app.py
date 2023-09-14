@@ -9,21 +9,20 @@ import json
 
 def check_HMAC(data: dict) -> bool:
     hmac_sign = data.pop("hmac_sign")
-    datastr = json.dumps(data)
+    datastr = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 
     current_timestamp = int(time())
     if abs(current_timestamp - data["timestamp"]) > 30:
         return False
-    return (
-        str(
-            hmac.new(
-                hmac_key,
-                datastr.encode("utf-8"),
-                hashlib.sha3_512,
-            ).hexdigest()
-        )
-        == hmac_sign
+
+    calculated_hmac = str(
+        hmac.new(
+            hmac_key,
+            datastr.encode("utf-8"),
+            hashlib.sha3_512,
+        ).hexdigest()
     )
+    return calculated_hmac == hmac_sign
 
 
 app = Flask(__name__)
