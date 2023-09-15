@@ -40,7 +40,13 @@ class ZimbraAPI:
     ################################################## ACCOUNT MANAGEMENT ##################################################
 
     def CreateAccount(
-        self, accountName: str, password: str, name: str, surname: str, patronymic: str
+        self,
+        accountName: str,
+        password: str,
+        name: str,
+        surname: str,
+        patronymic: str = "",
+        extraParams: dict = None,
     ) -> ResponseData:
         name = name.encode("ascii", errors="xmlcharrefreplace").decode()
         surname = surname.encode("ascii", errors="xmlcharrefreplace").decode()
@@ -51,18 +57,27 @@ class ZimbraAPI:
             return UpdateAuthDataStatus
 
         result = ResponseData()
+
+        baseParams = {
+            "zimbraAccountStatus": "active",
+            "givenName": name,
+            "sn": surname,
+            "initials": patronymic,
+            "displayName": f"{surname} {name} {patronymic}",
+        }
+        params = {**baseParams, **(extraParams if extraParams else {})}
+
+        paramStr = ""
+        for key, value in params:
+            paramStr = paramStr + f'<a n="{key}">{value}</a>'
+
         RequestData = self.__WrapInSoapTemplate(
             [
                 (
                     '<CreateAccountRequest xmlns="urn:zimbraAdmin">'
                         f"<name>{accountName}</name>"
                         f"<password>{password}</password>"
-                        '<a n="zimbraAccountStatus">active</a>'
-                        f'<a n="displayName">{surname} {name} {patronymic}</a>'
-                        f'<a n="givenName">{name}</a>'
-                        f'<a n="initials">{patronymic}</a>'
-                        f'<a n="sn">{surname}</a>'
-                        '<a n="zimbraPasswordMustChange">FALSE</a>'
+                        f"{paramStr}"
                     "</CreateAccountRequest>"
                 )
             ]
@@ -75,11 +90,15 @@ class ZimbraAPI:
             verify=False,
         )
 
-        if CreateAccountResponse.status_code == 200:
-            result.SetData({"success": True})
-        else:
-            jsonResponseData = json.loads(CreateAccountResponse.text)["Body"]
+        jsonResponseData = json.loads(CreateAccountResponse.text)["Body"]
 
+        if CreateAccountResponse.status_code == 200:
+            data = dict()
+            data['id'] = jsonResponseData["CreateAccountResponse"]["account"][0]["id"]
+            data['name'] = jsonResponseData["CreateAccountResponse"]["account"][0]["name"]
+
+            result.SetData(data)
+        else:
             result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])
             result.SetErrorCode(jsonResponseData["Fault"]["Detail"]["Error"]["Code"])
 
@@ -93,10 +112,10 @@ class ZimbraAPI:
         result = ResponseData()
 
         if accountID == "":
-            accInfo = self.GetAccountInfo(accountName=accountName)
+            accInfo = self.GetAccount(accountName=accountName)
             if accInfo.IsError():
                 return accInfo
-            if not accInfo.GetData()["exists"]:
+            if not accInfo.GetData():
                 result.SetErrorCode("NO_SUCH_MAILBOX")
                 return result
             accountID = accInfo.GetData()["id"]
@@ -128,7 +147,7 @@ class ZimbraAPI:
 
         return result
 
-    def GetAccountInfo(
+    def GetAccount(
         self, accountID: str = "", accountName: str = ""
     ) -> ResponseData:
         UpdateAuthDataStatus = self.__UpdateAuthData()
@@ -162,35 +181,27 @@ class ZimbraAPI:
             verify=False,
         )
 
-        jsonResponseData = json.loads(AccountInfoResponse.text)["Body"]
+        jsonResponseData = json.loads(AccountInfoResponse.text)["Body"]["BatchResponse"]
 
-        data = {}
-        try:
-            tempDataArray = jsonResponseData["BatchResponse"]["GetAccountResponse"]
-            for i in tempDataArray:
-                if "account" in i:
-                    tempDataArray = i["account"]
-                    break
-            for i in tempDataArray:
-                if "name" in i:
-                    data["name"] = i["name"]
-                    break
-            for i in tempDataArray:
-                if "id" in i:
-                    data["id"] = i["id"]
-                    break
-            for i in tempDataArray:
-                if "a" in i:
-                    tempDataArray = i["a"]
-                    break
-            for d in tempDataArray:
-                if d["n"] == "zimbraIsAdminAccount":
-                    data["isAdmin"] = d["_content"]
-            data["exists"] = True
+        if "GetAccountResponse" in jsonResponseData:
+            data = dict()
+            tempData = jsonResponseData["GetAccountResponse"][0]["account"]
+            
+            data["name"] = i["name"]
+            data["id"] = i["id"]
+            
+            params = dict()
+            for param in tempData["a"]:
+                paramName = param["n"]
+                paramValue = param["_content"]
+
+                params[paramName] == paramValue
+                
+            data['params'] = params
             result.SetData(data)
-        except:
-            data["exists"] = False
-            result.SetData(data)
+        else:
+            result.SetErrorText(jsonResponseData["Fault"][0]["Reason"]["Text"])
+            result.SetErrorCode(jsonResponseData["Fault"][0]["Detail"]["Error"]["Code"])
 
         return result
 
@@ -327,14 +338,9 @@ class ZimbraAPI:
         jsonResponseData = json.loads(PreauthResponse.text)["Body"]
 
         if PreauthResponse.status_code == 200:
-            preauthToken = jsonResponseData["DelegateAuthResponse"]["authToken"][0][
-                "_content"
-            ]
+            preauthToken = jsonResponseData["DelegateAuthResponse"]["authToken"][0]["_content"]
             result.SetData(
-                {
-                    "url": self.__Host
-                    + f"/service/preauth?authtoken={preauthToken}&isredirect=1"
-                }
+                {"url": self.__Host + f"/service/preauth?authtoken={preauthToken}&isredirect=1"}
             )
         else:
             result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])
@@ -347,10 +353,8 @@ class ZimbraAPI:
     def CreateDistributionList(
         self,
         name: str,
-        displayName: str,
-        description: str = "",
-        subscriptionPolicy: str = "APPROVAL",
-        unsubscriptionPolicy: str = "ACCEPT",
+        displayName: str = "",
+        extraParams: dict = None
     ) -> ResponseData:
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if UpdateAuthDataStatus.IsError():
@@ -359,18 +363,22 @@ class ZimbraAPI:
         result = ResponseData()
 
         displayName = displayName.encode("ascii", errors="xmlcharrefreplace").decode()
-        description = description.encode("ascii", errors="xmlcharrefreplace").decode()
+
+        baseParams = {
+            "displayName": displayName,
+        }
+        params = {**baseParams, **(extraParams if extraParams else {})}
+
+        paramStr = ""
+        for key, value in params:
+            paramStr = paramStr + f'<a n="{key}">{value}</a>'
 
         RequestData = self.__WrapInSoapTemplate(
             [
                 (
                     '<CreateDistributionListRequest xmlns="urn:zimbraAdmin">'
                         f"<name>{name}</name>"
-                        '<a n="zimbraMailStatus">enabled</a>'
-                        f'<a n="displayName">{displayName}</a>'
-                        f'<a n="description">{description}</a>'
-                        f'<a n="zimbraDistributionListSubscriptionPolicy">{subscriptionPolicy}</a>'
-                        f'<a n="zimbraDistributionListUnsubscriptionPolicy">{unsubscriptionPolicy}</a>'
+                        f'{paramStr}'
                     "</CreateDistributionListRequest>"
                 )
             ]
@@ -386,8 +394,10 @@ class ZimbraAPI:
         jsonResponseData = json.loads(CreateDistrListResponse.text)["Body"]
 
         if CreateDistrListResponse.status_code == 200:
-            id = jsonResponseData["CreateDistributionListResponse"]["dl"][0]["id"]
-            result.SetData({"id": id})
+            data = dict()
+            data["id"] = jsonResponseData["CreateDistributionListResponse"]["dl"][0]["id"]
+            data["name"] = jsonResponseData["CreateDistributionListResponse"]["dl"][0]["name"]
+            result.SetData(data)
         else:
             result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])
             result.SetErrorCode(jsonResponseData["Fault"]["Detail"]["Error"]["Code"])

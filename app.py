@@ -43,6 +43,24 @@ def CreateAccount():
     name: str = data.get("name")
     surname: str = data.get("surname")
     patronymic: str = data.get("patronymic", "")
+    params: dict = data.get(
+        "params",
+        {
+            "zimbraAccountStatus": "active",
+            "zimbraFeatureCalendarEnabled": "FALSE",
+            "zimbraFeatureTasksEnabled": "FALSE",
+            "zimbraFeatureBriefcasesEnabled": "FALSE",
+            "zimbraFeatureOptionsEnabled": "FALSE",
+            "zimbraFeatureSharingEnabled": "FALSE",
+            "zimbraFeatureManageZimlets": "FALSE",
+            "zimbraFeatureGalEnabled": "FALSE",
+            "zimbraFeatureGalAutoCompleteEnabled": "FALSE",
+            "zimbraPrefGalAutoCompleteEnabled": "FALSE",
+            "zimbraFeatureChangePasswordEnabled": "FALSE",
+            "zimbraMailForwardingAddressMaxNumAddrs": 5,
+            "zimbraMailQuota": 524288000,
+        },
+    )
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
@@ -54,7 +72,7 @@ def CreateAccount():
         return ResponseData.GetHMACError().asdict()
 
     result = Zimbra.CreateAccount(
-        accountName, password, name, patronymic, surname
+        accountName, password, name, surname, patronymic, params
     ).asdict()
     return result
 
@@ -79,8 +97,8 @@ def DeleteAccount():
     return result
 
 
-@app.route("/getAccountInfo", methods=["POST"])
-def GetAccountInfo():
+@app.route("/getAccount", methods=["POST"])
+def GetAccount():
     data = request.json
 
     accountID: str = data.get("accountID", "")
@@ -95,7 +113,7 @@ def GetAccountInfo():
     if not check_HMAC(data):
         return ResponseData.GetHMACError().asdict()
 
-    result = Zimbra.GetAccountInfo(accountID, accountName).asdict()
+    result = Zimbra.GetAccount(accountID, accountName).asdict()
     return result
 
 
@@ -230,16 +248,20 @@ def CreateDistributionList():
 
     name: str = data.get("name")
     displayName: str = data.get("displayName", "")
-    description: str = data.get("description", "")
-    subscriptionPolicy: str = data.get("subscriptionPolicy", "APPROVAL")
-    unsubscriptionPolicy: str = data.get("unsubscriptionPolicy", "ACCEPT")
+    params: dict = data.get(
+        "params",
+        {
+            "zimbraMailStatus": "enabled",
+            "zimbraDistributionListSubscriptionPolicy": "REJECT",
+            "zimbraDistributionListUnsubscriptionPolicy": "REJECT",
+        },
+    )
 
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
 
     if None in [
         name,
-        displayName,
         timestamp,
         hmac_sign,
     ]:
@@ -248,9 +270,7 @@ def CreateDistributionList():
     if not check_HMAC(data):
         return ResponseData.GetHMACError().asdict()
 
-    result = Zimbra.CreateDistributionList(
-        name, displayName, description, subscriptionPolicy, unsubscriptionPolicy
-    ).asdict()
+    result = Zimbra.CreateDistributionList(name, displayName, params).asdict()
     return result
 
 

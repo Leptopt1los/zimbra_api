@@ -8,9 +8,9 @@ It runs on Flask, uses HMAC based on SHA3_512 signature for the received data
 
 ## Routes:
 ### ACCOUNT MANAGEMENT
-- `/createAccount (accountName, password, name, surname, patronymic, timestamp, hmac_sign)`
+- `/createAccount (accountName, password, name, surname, patronymic?, params?, timestamp, hmac_sign)`
 - `/deleteAccount (accountID/accountName, timestamp, hmac_sign)`
-- `/getAccountInfo (accountID/accountName, timestamp, hmac_sign)`
+- `/getAccount (accountID/accountName, timestamp, hmac_sign)`
 - `/getAccountMembership (accountID/accountName, timestamp, hmac_sign)`
 ### MAILBOX MANAGEMENT
 - `/getMessages (accountName, unreadOnly?, timestamp, hmac_sign)`
@@ -19,7 +19,7 @@ It runs on Flask, uses HMAC based on SHA3_512 signature for the received data
 - `/getDistributionLists (timestamp, hmac_sign)`
 - `/getDistributionList (distrListID/distrListName, timestamp, hmac_sign)`
 - `/getDistributionListMembership (distrListID/distrListName, timestamp, hmac_sign)`
-- `/createDistributionList (name, displayName?, description?, subscriptionPolicy?, unsubscriptionPolicy?, timestamp, hmac_sign)`
+- `/createDistributionList (name, displayName?, params?, timestamp, hmac_sign)`
 - `/deleteDistributionList (distrListID/distrListName, timestamp, hmac_sign)`
 - `/addDistributionListMembers (distrListID/distrListName, userEmails, timestamp, hmac_sign)`
 - `/removeDistributionListMembers (distrListID/distrListName, userEmails, timestamp, hmac_sign)`
