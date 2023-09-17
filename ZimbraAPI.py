@@ -25,15 +25,15 @@ class ZimbraAPI:
         dataStr = "".join(data)
         return (
             '<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">'
-            "<soap:Header>"
-            '<context xmlns="urn:zimbra">'
-            '<format type="js"/>'
-            f"<csrfToken>{self.__GetCSRFToken()}</csrfToken>"
-            "</context>"
-            "</soap:Header>"
-            "<soap:Body>"
-            f"{dataStr}"
-            "</soap:Body>"
+                "<soap:Header>"
+                    '<context xmlns="urn:zimbra">'
+                        '<format type="js"/>'
+                        f"<csrfToken>{self.__GetCSRFToken()}</csrfToken>"
+                    "</context>"
+                "</soap:Header>"
+                "<soap:Body>"
+                    f"{dataStr}"
+                "</soap:Body>"
             "</soap:Envelope>"
         )
 
@@ -75,9 +75,9 @@ class ZimbraAPI:
             [
                 (
                     '<CreateAccountRequest xmlns="urn:zimbraAdmin">'
-                    f"<name>{accountName}</name>"
-                    f"<password>{password}</password>"
-                    f"{paramStr}"
+                        f"<name>{accountName}</name>"
+                        f"<password>{password}</password>"
+                        f"{paramStr}"
                     "</CreateAccountRequest>"
                 )
             ]
@@ -124,7 +124,7 @@ class ZimbraAPI:
             [
                 (
                     '<DeleteAccountRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{accountID}</id>"
+                        f"<id>{accountID}</id>"
                     "</DeleteAccountRequest>"
                 )
             ]
@@ -169,8 +169,8 @@ class ZimbraAPI:
             [
                 (
                     '<ModifyAccountRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{accountID}</id>"
-                    f"{paramStr}"
+                        f"<id>{accountID}</id>"
+                        f"{paramStr}"
                     "</ModifyAccountRequest>"
                 )
             ]
@@ -226,8 +226,8 @@ class ZimbraAPI:
             [
                 (
                     '<RenameAccountRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{accountID}</id>"
-                    f"<newName>{newName}</newName>"
+                        f"<id>{accountID}</id>"
+                        f"<newName>{newName}</newName>"
                     "</RenameAccountRequest>"
                 )
             ]
@@ -274,8 +274,8 @@ class ZimbraAPI:
             [
                 (
                     '<SetPasswordRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{accountID}</id>"
-                    f"<newPassword>{newPassword}</newPassword>"
+                        f"<id>{accountID}</id>"
+                        f"<newPassword>{newPassword}</newPassword>"
                     "</SetPasswordRequest>"
                 )
             ]
@@ -315,9 +315,9 @@ class ZimbraAPI:
             [
                 (
                     '<BatchRequest xmlns="urn:zimbra" onerror="continue">'
-                    '<GetAccountRequest xmlns="urn:zimbraAdmin" applyCos="0">'
-                    f"{requestStr}"
-                    "</GetAccountRequest>"
+                        '<GetAccountRequest xmlns="urn:zimbraAdmin" applyCos="0">'
+                            f"{requestStr}"
+                        "</GetAccountRequest>"
                     "</BatchRequest>"
                 )
             ]
@@ -373,7 +373,7 @@ class ZimbraAPI:
             [
                 (
                     '<GetAccountMembershipRequest xmlns="urn:zimbraAdmin">'
-                    f"{requestStr}"
+                        f"{requestStr}"
                     "</GetAccountMembershipRequest>"
                 )
             ]
@@ -471,7 +471,7 @@ class ZimbraAPI:
             [
                 (
                     '<DelegateAuthRequest xmlns="urn:zimbraAdmin">'
-                    f"{requestStr}"
+                        f"{requestStr}"
                     "</DelegateAuthRequest>"
                 )
             ]
@@ -528,8 +528,8 @@ class ZimbraAPI:
             [
                 (
                     '<CreateDistributionListRequest xmlns="urn:zimbraAdmin">'
-                    f"<name>{name}</name>"
-                    f"{paramStr}"
+                        f"<name>{name}</name>"
+                        f"{paramStr}"
                     "</CreateDistributionListRequest>"
                 )
             ]
@@ -579,7 +579,7 @@ class ZimbraAPI:
             [
                 (
                     '<DeleteDistributionListRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{distrListID}</id>"
+                        f"<id>{distrListID}</id>"
                     "</DeleteDistributionListRequest>"
                 )
             ]
@@ -626,8 +626,8 @@ class ZimbraAPI:
             [
                 (
                     '<ModifyDistributionListRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{distrListID}</id>"
-                    f"{paramStr}"
+                        f"<id>{distrListID}</id>"
+                        f"{paramStr}"
                     "</ModifyDistributionListRequest>"
                 )
             ]
@@ -685,7 +685,7 @@ class ZimbraAPI:
             [
                 (
                     '<GetDistributionListRequest xmlns="urn:zimbraAdmin" limit="0" offset="0">'
-                    f"{requestStr}"
+                        f"{requestStr}"
                     "</GetDistributionListRequest>"
                 )
             ]
@@ -743,7 +743,7 @@ class ZimbraAPI:
             [
                 (
                     '<SearchDirectoryRequest xmlns="urn:zimbraAdmin" offset="0" sortBy="name" sortAscending="1" applyCos="false" applyConfig="false" attrs="displayName,uid,description" types="distributionlists,dynamicgroups">'
-                    "<query>(&amp;(!(zimbraIsSystemAccount=TRUE)))</query>"
+                        "<query>(&amp;(!(zimbraIsSystemAccount=TRUE)))</query>"
                     "</SearchDirectoryRequest>"
                 )
             ]
@@ -796,7 +796,7 @@ class ZimbraAPI:
             [
                 (
                     '<GetDistributionListMembershipRequest xmlns="urn:zimbraAdmin">'
-                    f"{requestStr}"
+                        f"{requestStr}"
                     "</GetDistributionListMembershipRequest>"
                 )
             ]
@@ -856,8 +856,8 @@ class ZimbraAPI:
             [
                 (
                     '<AddDistributionListMemberRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{distrListID}</id>"
-                    f"{usersRequestStr}"
+                        f"<id>{distrListID}</id>"
+                        f"{usersRequestStr}"
                     "</AddDistributionListMemberRequest>"
                 )
             ]
@@ -900,8 +900,8 @@ class ZimbraAPI:
             [
                 (
                     '<RemoveDistributionListMemberRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{distrListID}</id>"
-                    f"{usersRequestStr}"
+                        f"<id>{distrListID}</id>"
+                        f"{usersRequestStr}"
                     "</RemoveDistributionListMemberRequest>"
                 )
             ]
@@ -950,8 +950,8 @@ class ZimbraAPI:
             [
                 (
                     '<RenameDistributionListRequest xmlns="urn:zimbraAdmin">'
-                    f"<id>{distrListID}</id>"
-                    f"<newName>{newName}</newName>"
+                        f"<id>{distrListID}</id>"
+                        f"<newName>{newName}</newName>"
                     f"</RenameDistributionListRequest>"
                 )
             ]

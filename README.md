@@ -10,6 +10,9 @@ It runs on Flask, uses HMAC based on SHA3_512 signature for the received data
 ### ACCOUNT MANAGEMENT
 - `/createAccount (accountName, password, name, surname, patronymic?, params?, timestamp, hmac_sign)`
 - `/deleteAccount (accountID/accountName, timestamp, hmac_sign)`
+- `/modifyAccount (accountID/accountName, params. timestamp, hmac_sign)`
+- `/renameAccount (accountID/accountName, newName. timestamp, hmac_sign)`
+- `/setPassword (accountID/accountName, newPassword. timestamp, hmac_sign)`
 - `/getAccount (accountID/accountName, timestamp, hmac_sign)`
 - `/getAccountMembership (accountID/accountName, timestamp, hmac_sign)`
 ### MAILBOX MANAGEMENT
@@ -21,6 +24,8 @@ It runs on Flask, uses HMAC based on SHA3_512 signature for the received data
 - `/getDistributionListMembership (distrListID/distrListName, timestamp, hmac_sign)`
 - `/createDistributionList (name, displayName?, params?, timestamp, hmac_sign)`
 - `/deleteDistributionList (distrListID/distrListName, timestamp, hmac_sign)`
+- `/modifyDistributionList (distrListID/distrListName, params, timestamp, hmac_sign)`
+- `/renameDistributionList (distrListID/distrListName, newName, timestamp, hmac_sign)`
 - `/addDistributionListMembers (distrListID/distrListName, userEmails, timestamp, hmac_sign)`
 - `/removeDistributionListMembers (distrListID/distrListName, userEmails, timestamp, hmac_sign)`
 

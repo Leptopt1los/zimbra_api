@@ -150,7 +150,9 @@ def SetPassword():
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
 
-    if (None in [newPassword, timestamp, hmac_sign]) or (accountID == accountName == ""):
+    if (None in [newPassword, timestamp, hmac_sign]) or (
+        accountID == accountName == ""
+    ):
         return ResponseData.GetMissingDataError().asdict()
 
     if not check_HMAC(data):
@@ -389,7 +391,9 @@ def RenameDistributionList():
     timestamp: str = data.get("timestamp")
     hmac_sign: str = data.get("hmac_sign")
 
-    if (None in [newName, timestamp, hmac_sign]) or (distrListID == distrListName == ""):
+    if (None in [newName, timestamp, hmac_sign]) or (
+        distrListID == distrListName == ""
+    ):
         return ResponseData.GetMissingDataError().asdict()
 
     if not check_HMAC(data):
