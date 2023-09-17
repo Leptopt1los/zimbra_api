@@ -97,6 +97,69 @@ def DeleteAccount():
     return result
 
 
+@app.route("/modifyAccount", methods=["POST"])
+def ModifyAccount():
+    data = request.json
+
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
+    params: dict = data.get("params")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if (None in [params, timestamp, hmac_sign]) or (accountID == accountName == ""):
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.ModifyAccount(params, accountID, accountName).asdict()
+    return result
+
+
+@app.route("/renameAccount", methods=["POST"])
+def RenameAccount():
+    data = request.json
+
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
+    newName: str = data.get("newName")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if (None in [newName, timestamp, hmac_sign]) or (accountID == accountName == ""):
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.RenameAccount(newName, accountID, accountName).asdict()
+    return result
+
+
+@app.route("/setPassword", methods=["POST"])
+def SetPassword():
+    data = request.json
+
+    accountID: str = data.get("accountID", "")
+    accountName: str = data.get("accountName", "")
+    newPassword: str = data.get("newPassword")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if (None in [newPassword, timestamp, hmac_sign]) or (accountID == accountName == ""):
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.SetPassword(newPassword, accountID, accountName).asdict()
+    return result
+
+
 @app.route("/getAccount", methods=["POST"])
 def GetAccount():
     data = request.json
@@ -294,6 +357,48 @@ def DeleteDistributionListByID():
     return result
 
 
+@app.route("/modifyDistributionList", methods=["POST"])
+def ModifyDistributionList():
+    data = request.json
+
+    distrListID: str = data.get("distrListID", "")
+    distrListName: str = data.get("distrListName", "")
+    params: dict = data.get("params")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if (None in [params, timestamp, hmac_sign]) or (distrListID == distrListName == ""):
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.ModifyDistributionList(params, distrListID, distrListName).asdict()
+    return result
+
+
+@app.route("/renameDistributionList", methods=["POST"])
+def RenameDistributionList():
+    data = request.json
+
+    distrListID: str = data.get("distrListID", "")
+    distrListName: str = data.get("distrListName", "")
+    newName: str = data.get("newName")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if (None in [newName, timestamp, hmac_sign]) or (distrListID == distrListName == ""):
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.RenameDistributionList(newName, distrListID, distrListName).asdict()
+    return result
+
+
 @app.route("/addDistributionListMembers", methods=["POST"])
 def AddDistributionListMembers():
     data = request.json
@@ -338,7 +443,7 @@ def RemoveDistributionListMembers():
     if not check_HMAC(data):
         return ResponseData.GetHMACError().asdict()
 
-    result = Zimbra.AddDistributionListMembers(
+    result = Zimbra.RemoveDistributionListMembers(
         userEmails, distrListID, distrListName
     ).asdict()
     return result
