@@ -68,7 +68,7 @@ class ZimbraAPI:
         params = {**baseParams, **(extraParams if extraParams else {})}
 
         paramStr = ""
-        for key, value in params:
+        for key, value in params.items():
             paramStr = paramStr + f'<a n="{key}">{value}</a>'
 
         RequestData = self.__WrapInSoapTemplate(
@@ -162,7 +162,7 @@ class ZimbraAPI:
             accountID = accInfo.GetData()["id"]
 
         paramStr = ""
-        for key, value in params:
+        for key, value in params.items():
             paramStr = paramStr + f'<a n="{key}">{value}</a>'
 
         RequestData = self.__WrapInSoapTemplate(
@@ -521,7 +521,7 @@ class ZimbraAPI:
         params = {**baseParams, **(extraParams if extraParams else {})}
 
         paramStr = ""
-        for key, value in params:
+        for key, value in params.items():
             paramStr = paramStr + f'<a n="{key}">{value}</a>'
 
         RequestData = self.__WrapInSoapTemplate(
@@ -619,7 +619,7 @@ class ZimbraAPI:
             distrListID = distrListData.GetData()["id"]
 
         paramStr = ""
-        for key, value in params:
+        for key, value in params.items():
             paramStr = paramStr + f'<a n="{key}">{value}</a>'
 
         RequestData = self.__WrapInSoapTemplate(
