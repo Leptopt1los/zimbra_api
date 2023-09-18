@@ -94,10 +94,11 @@ class ZimbraAPI:
 
         if CreateAccountResponse.status_code == 200:
             data = dict()
-            data["id"] = jsonResponseData["CreateAccountResponse"]["account"][0]["id"]
-            data["name"] = jsonResponseData["CreateAccountResponse"]["account"][0][
-                "name"
-            ]
+
+            accountData = jsonResponseData["CreateAccountResponse"]["account"][0]
+
+            data["name"] = accountData["name"]
+            data["id"] = accountData["id"]
 
             result.SetData(data)
         else:
@@ -188,13 +189,14 @@ class ZimbraAPI:
         if ModifyAccountResponse.status_code == 200:
             data = dict()
 
-            tempData = jsonResponseData["ModifyAccountResponse"]["account"][0]
-            data["id"] = tempData["id"]
-            data["name"] = tempData["name"]
+            accountData = jsonResponseData["ModifyAccountResponse"]["account"][0]
+
+            data["name"] = accountData["name"]
+            data["id"] = accountData["id"]
 
             newParams = dict()
 
-            for param in tempData["a"]:
+            for param in accountData["a"]:
                 paramName = param["n"]
                 paramValue = param["_content"]
 
@@ -245,9 +247,10 @@ class ZimbraAPI:
         if RenameAccountResponse.status_code == 200:
             data = dict()
 
-            tempData = jsonResponseData["RenameAccountResponse"]["account"][0]
-            data["id"] = tempData["id"]
-            data["name"] = tempData["name"]
+            accountData = jsonResponseData["RenameAccountResponse"]["account"][0]
+
+            data["name"] = accountData["name"]
+            data["id"] = accountData["id"]
 
             result.SetData(data)
         else:
@@ -334,13 +337,14 @@ class ZimbraAPI:
 
         if "GetAccountResponse" in jsonResponseData:
             data = dict()
-            tempData = jsonResponseData["GetAccountResponse"][0]["account"]
 
-            data["name"] = i["name"]
-            data["id"] = i["id"]
+            accountData = jsonResponseData["GetAccountResponse"][0]["account"][0]
+
+            data["name"] = accountData["name"]
+            data["id"] = accountData["id"]
 
             params = dict()
-            for param in tempData["a"]:
+            for param in accountData["a"]:
                 paramName = param["n"]
                 paramValue = param["_content"]
 
@@ -354,6 +358,57 @@ class ZimbraAPI:
 
         return result
 
+    def GetAccounts(self):
+        UpdateAuthDataStatus = self.__UpdateAuthData()
+        if UpdateAuthDataStatus.IsError():
+            return UpdateAuthDataStatus
+
+        result = ResponseData()
+
+        RequestData = self.__WrapInSoapTemplate(
+            [
+                (
+                    '<SearchDirectoryRequest xmlns="urn:zimbraAdmin" offset="0" limit="0" sortBy="name" sortAscending="1" applyCos="false" applyConfig="false" attrs="displayName,zimbraAccountStatus,zimbraLastLogonTimestamp,description,zimbraIsAdminAccount,zimbraMailStatus" types="accounts">'
+                        "<query>(&amp;(!(zimbraIsSystemAccount=TRUE)))</query>"
+                    "</SearchDirectoryRequest>"
+                )
+            ]
+        )
+
+        GetAccountsResponse = requests.post(
+            self.__AdminHost + "/service/admin/soap/SearchDirectoryRequest",
+            data=RequestData,
+            cookies=self.__GetCookies(),
+            verify=False,
+        )
+
+        jsonResponseData = json.loads(GetAccountsResponse.text)["Body"]
+
+        if GetAccountsResponse.status_code == 200:
+            data = dict()
+
+            accountsData = jsonResponseData["SearchDirectoryResponse"]
+            if "account" in accountsData:
+                for account in accountsData["account"]:
+                    item = dict()
+
+                    item["id"] = account["id"]
+
+                    for attr in account["a"]:
+                        attrName = attr["n"]
+                        attrValue = attr["_content"]
+
+                        item[attrName] = attrValue
+
+                    data[account["name"]] = item
+
+            result.SetData(data)
+        else:
+            result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])
+            result.SetErrorCode(jsonResponseData["Fault"]["Detail"]["Error"]["Code"])
+
+        return result
+
     def GetAccountMembership(
         self, accountID: str = "", accountName: str = ""
     ) -> ResponseData:
@@ -364,7 +419,7 @@ class ZimbraAPI:
         result = ResponseData()
 
         requestStr = ""
-        if accountName == "":
+        if accountID == "":
             requestStr = f'<account by="name">{accountName}</account>'
         else:
             requestStr = f'<account by="id">{accountID}</account>'
@@ -390,8 +445,11 @@ class ZimbraAPI:
 
         if GetAccountMembershipResponse.status_code == 200:
             data = dict()
-            if "dl" in jsonResponseData["GetAccountMembershipResponse"]:
-                for distrList in jsonResponseData["GetAccountMembershipResponse"]["dl"]:
+
+            accountData = jsonResponseData["GetAccountMembershipResponse"]
+
+            if "dl" in accountData:
+                for distrList in accountData["dl"]:
                     item = dict()
                     item["id"] = distrList["id"]
                     item["via"] = distrList["via"] if "via" in distrList else "DIRECT"
@@ -426,25 +484,37 @@ class ZimbraAPI:
         if GetMessagesResponse.status_code == 200:
             jsonResponseData = json.loads(GetMessagesResponse.text)
 
-            data = {"messages": []}
+            data = dict()
+
+            messages = list()
+
             if "m" in jsonResponseData:
                 data["count"] = len(jsonResponseData["m"])
+
                 for message in jsonResponseData["m"][:10]:
-                    parsedMessage = {}
+                    parsedMessage = dict()
+
                     parsedMessage["date"] = message["d"] // 1000
+
                     if "p" in message["e"][1]:
                         parsedMessage["sender_name"] = message["e"][1]["p"]
                     else:
                         parsedMessage["sender_name"] = message["e"][1]["d"]
+
                     parsedMessage["sender_email"] = message["e"][1]["a"]
                     parsedMessage["subject"] = message["su"]
                     parsedMessage["message"] = message["fr"]
-                    data["messages"].append(parsedMessage)
+
+                    messages.append(parsedMessage)
             else:
                 data["count"] = 0
+
+            data["messages"] = messages
+
             result.SetData(data)
         else:
             result.SetErrorText(GetMessagesResponse.text)
+
             if GetMessagesResponse.status_code == 404:
                 result.SetErrorCode("NO_SUCH_MAILBOX")
             else:
@@ -487,9 +557,10 @@ class ZimbraAPI:
         jsonResponseData = json.loads(PreauthResponse.text)["Body"]
 
         if PreauthResponse.status_code == 200:
-            preauthToken = jsonResponseData["DelegateAuthResponse"]["authToken"][0][
-                "_content"
-            ]
+            delegateAuthResponseData = jsonResponseData["DelegateAuthResponse"]
+
+            preauthToken = delegateAuthResponseData["authToken"][0]["_content"]
+
             result.SetData(
                 {
                     "url": self.__Host
@@ -535,23 +606,23 @@ class ZimbraAPI:
             ]
         )
 
-        CreateDistrListResponse = requests.post(
+        CreateDistributionListResponse = requests.post(
             self.__AdminHost + "/service/admin/soap/CreateDistributionListRequest",
             data=RequestData,
             cookies=self.__GetCookies(),
             verify=False,
         )
 
-        jsonResponseData = json.loads(CreateDistrListResponse.text)["Body"]
+        jsonResponseData = json.loads(CreateDistributionListResponse.text)["Body"]
 
-        if CreateDistrListResponse.status_code == 200:
+        if CreateDistributionListResponse.status_code == 200:
             data = dict()
-            data["id"] = jsonResponseData["CreateDistributionListResponse"]["dl"][0][
-                "id"
-            ]
-            data["name"] = jsonResponseData["CreateDistributionListResponse"]["dl"][0][
-                "name"
-            ]
+
+            dlData = jsonResponseData["CreateDistributionListResponse"]["dl"][0]
+
+            data["name"] = dlData["name"]
+            data["id"] = dlData["id"]
+
             result.SetData(data)
         else:
             result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])
@@ -644,12 +715,12 @@ class ZimbraAPI:
 
         if ModifyDistributionListResponse.status_code == 200:
             data = dict()
-            data["name"] = jsonResponseData["ModifyDistributionListResponse"]["dl"][0][
-                "name"
-            ]
-            data["id"] = jsonResponseData["ModifyDistributionListResponse"]["dl"][0][
-                "id"
-            ]
+
+            dlData = jsonResponseData["ModifyDistributionListResponse"]["dl"][0]
+
+            data["name"] = dlData["name"]
+            data["id"] = dlData["id"]
+            data["dynamic"] = dlData["dynamic"]
 
             params = dict()
             for param in jsonResponseData["GetDistributionListResponse"]["dl"][0]["a"]:
@@ -702,23 +773,22 @@ class ZimbraAPI:
 
         if GetDistrListResponse.status_code == 200:
             data = dict()
-            data["name"] = jsonResponseData["GetDistributionListResponse"]["dl"][0][
-                "name"
-            ]
-            data["id"] = jsonResponseData["GetDistributionListResponse"]["dl"][0]["id"]
 
-            members = dict()
+            dlData = jsonResponseData["GetDistributionListResponse"]["dl"][0]
 
-            if "dlm" in jsonResponseData["GetDistributionListResponse"]["dl"][0]:
-                for member in jsonResponseData["GetDistributionListResponse"]["dl"][0][
-                    "dlm"
-                ]:
-                    members[member["_content"]] = "member"
+            data["name"] = dlData["name"]
+            data["id"] = dlData["id"]
+
+            members = list()
+
+            if "dlm" in dlData:
+                for member in dlData["dlm"]:
+                    members.append(member["_content"])
 
             data["members"] = members
 
             params = dict()
-            for param in jsonResponseData["GetDistributionListResponse"]["dl"][0]["a"]:
+            for param in dlData["a"]:
                 paramName = param["n"]
                 paramValue = param["_content"]
                 params[paramName] = paramValue
@@ -742,33 +812,43 @@ class ZimbraAPI:
         RequestData = self.__WrapInSoapTemplate(
             [
                 (
-                    '<SearchDirectoryRequest xmlns="urn:zimbraAdmin" offset="0" sortBy="name" sortAscending="1" applyCos="false" applyConfig="false" attrs="displayName,uid,description" types="distributionlists,dynamicgroups">'
+                    '<SearchDirectoryRequest xmlns="urn:zimbraAdmin" offset="0" sortBy="name" sortAscending="1" applyCos="false" applyConfig="false" attrs="displayName,uid,zimbraMailStatus" types="distributionlists,dynamicgroups">'
                         "<query>(&amp;(!(zimbraIsSystemAccount=TRUE)))</query>"
                     "</SearchDirectoryRequest>"
                 )
             ]
         )
 
-        GetDistrListsResponse = requests.post(
+        GetDistributionListsResponse = requests.post(
             self.__AdminHost + "/service/admin/soap/SearchDirectoryRequest",
             data=RequestData,
             cookies=self.__GetCookies(),
             verify=False,
         )
 
-        jsonResponseData = json.loads(GetDistrListsResponse.text)["Body"]
+        jsonResponseData = json.loads(GetDistributionListsResponse.text)["Body"]
 
-        if GetDistrListsResponse.status_code == 200:
+        if GetDistributionListsResponse.status_code == 200:
             data = dict()
-            if "dl" in jsonResponseData["SearchDirectoryResponse"]:
-                for distrList in jsonResponseData["SearchDirectoryResponse"]["dl"]:
-                    bDistrList = {}
-                    bDistrList["id"] = distrList["id"]
+
+            dlData = jsonResponseData["SearchDirectoryResponse"]
+            if "dl" in dlData:
+                for distrList in dlData["dl"]:
+                    item = dict()
+
+                    item["id"] = distrList["id"]
+                    item["dynamic"] = distrList["dynamic"]
+
                     for attr in distrList["a"]:
-                        bDistrList[attr["n"]] = attr["_content"]
+                        attrName = attr["n"]
+                        attrValue = attr["_content"]
+
+                        item[attrName] = attrValue
+
                     if "owners" in distrList:
-                        bDistrList["owner"] = distrList["owners"][0]["owner"][0]
-                    data[distrList["name"]] = bDistrList
+                        item["owner"] = distrList["owners"][0]["owner"][0]
+
+                    data[distrList["name"]] = item
 
             result.SetData(data)
         else:
@@ -816,13 +896,17 @@ class ZimbraAPI:
 
         if GetDistributionListMembershipResponse.status_code == 200:
             data = dict()
-            if "dl" in jsonResponseData["GetDistributionListMembershipResponse"]:
-                for distrList in jsonResponseData[
-                    "GetDistributionListMembershipResponse"
-                ]["dl"]:
+
+            dlData = jsonResponseData["GetDistributionListMembershipResponse"]
+
+            if "dl" in dlData:
+                for distrList in dlData["dl"]:
                     item = dict()
+
                     item["id"] = distrList["id"]
                     item["via"] = distrList["via"] if "via" in distrList else "DIRECT"
+                    item["dynamic"] = distrList["dynamic"]
+
                     data[distrList["name"]] = item
 
             result.SetData(data)
@@ -863,17 +947,17 @@ class ZimbraAPI:
             ]
         )
 
-        AddDistrListMembersResponse = requests.post(
+        AddDistributionListMembersResponse = requests.post(
             self.__AdminHost + "/service/admin/soap/AddDistributionListMemberRequest",
             data=RequestData,
             cookies=self.__GetCookies(),
             verify=False,
         )
 
-        if AddDistrListMembersResponse.status_code == 200:
+        if AddDistributionListMembersResponse.status_code == 200:
             result.SetData({"success": True})
         else:
-            jsonResponseData = json.loads(AddDistrListMembersResponse.text)["Body"]
+            jsonResponseData = json.loads(AddDistributionListMembersResponse.text)["Body"]
 
             result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])
             result.SetErrorCode(jsonResponseData["Fault"]["Detail"]["Error"]["Code"])
@@ -890,7 +974,11 @@ class ZimbraAPI:
         result = ResponseData()
 
         if distrListID == "":
-            distrListID = self.GetDistributionLists().GetData()[distrListName]["id"]
+            distrListData = self.GetDistributionList(distrListName=distrListName)
+            if distrListData.IsError():
+                return distrListData
+
+            distrListID = distrListData.GetData()["id"]
 
         usersRequestStr = ""
         for user in userEmails:
@@ -915,15 +1003,10 @@ class ZimbraAPI:
             verify=False,
         )
 
-        if (
-            AddDistrListMeRemoveDistributionListMembersResponsembersResponse.status_code
-            == 200
-        ):
+        if RemoveDistributionListMembersResponse.status_code == 200:
             result.SetData({"success": True})
         else:
-            jsonResponseData = json.loads(RemoveDistributionListMembersResponse.text)[
-                "Body"
-            ]
+            jsonResponseData = json.loads(RemoveDistributionListMembersResponse.text)["Body"]
 
             result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])
             result.SetErrorCode(jsonResponseData["Fault"]["Detail"]["Error"]["Code"])
@@ -968,12 +1051,12 @@ class ZimbraAPI:
 
         if RenameDistributionListResponse.status_code == 200:
             data = dict()
-            data["id"] = jsonResponseData["RenameDistributionListResponse"]["dl"][0][
-                "id"
-            ]
-            data["name"] = jsonResponseData["RenameDistributionListResponse"]["dl"][0][
-                "name"
-            ]
+
+            dlData = jsonResponseData["RenameDistributionListResponse"]["dl"][0]
+
+            data["name"] = dlData["name"]
+            data["id"] = dlData["id"]
+
             result.SetData(data)
         else:
             result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])

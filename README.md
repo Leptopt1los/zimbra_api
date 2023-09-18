@@ -14,6 +14,7 @@ It runs on Flask, uses HMAC based on SHA3_512 signature for the received data
 - `/renameAccount (accountID/accountName, newName. timestamp, hmac_sign)`
 - `/setPassword (accountID/accountName, newPassword. timestamp, hmac_sign)`
 - `/getAccount (accountID/accountName, timestamp, hmac_sign)`
+- `/getAccounts (timestamp, hmac_sign)`
 - `/getAccountMembership (accountID/accountName, timestamp, hmac_sign)`
 ### MAILBOX MANAGEMENT
 - `/getMessages (accountName, unreadOnly?, timestamp, hmac_sign)`

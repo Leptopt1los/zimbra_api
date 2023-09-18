@@ -182,6 +182,23 @@ def GetAccount():
     return result
 
 
+@app.route("/getAccounts", methods=["POST"])
+def GetAccounts():
+    data = request.json
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if None in [timestamp, hmac_sign]:
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.GetAccounts().asdict()
+    return result
+
+
 @app.route("/getAccountMembership", methods=["POST"])
 def GetAccountMembership():
     data = request.json
@@ -340,7 +357,7 @@ def CreateDistributionList():
 
 
 @app.route("/deleteDistributionList", methods=["POST"])
-def DeleteDistributionListByID():
+def DeleteDistributionList():
     data = request.json
 
     distrListID: str = data.get("distrListID", "")
