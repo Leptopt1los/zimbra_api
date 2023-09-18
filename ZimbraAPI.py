@@ -655,7 +655,7 @@ class ZimbraAPI:
             for param in jsonResponseData["GetDistributionListResponse"]["dl"][0]["a"]:
                 paramName = param["n"]
                 paramValue = param["_content"]
-                params[paramName] = param[paramValue]
+                params[paramName] = paramValue
 
             data["params"] = params
 
@@ -721,7 +721,7 @@ class ZimbraAPI:
             for param in jsonResponseData["GetDistributionListResponse"]["dl"][0]["a"]:
                 paramName = param["n"]
                 paramValue = param["_content"]
-                params[paramName] = param[paramValue]
+                params[paramName] = paramValue
 
             data["params"] = params
 
