@@ -522,9 +522,7 @@ class ZimbraAPI:
 
         return result
 
-    def GetPreauthLink(
-        self, accountID: str = "", accountName: str = ""
-    ) -> ResponseData:
+    def DelegateAuth(self, accountID: str = "", accountName: str = "") -> ResponseData:
         UpdateAuthDataStatus = self.__UpdateAuthData()
         if UpdateAuthDataStatus.IsError():
             return UpdateAuthDataStatus
@@ -541,13 +539,13 @@ class ZimbraAPI:
             [
                 (
                     '<DelegateAuthRequest xmlns="urn:zimbraAdmin">'
-                        f"{requestStr}"
+                    f"{requestStr}"
                     "</DelegateAuthRequest>"
                 )
             ]
         )
 
-        PreauthResponse = requests.post(
+        DelegateAuthResponse = requests.post(
             self.__AdminHost + "/service/admin/soap/DelegateAuthRequest",
             data=RequestData,
             cookies=self.__GetCookies(),
@@ -556,15 +554,16 @@ class ZimbraAPI:
 
         jsonResponseData = json.loads(PreauthResponse.text)["Body"]
 
-        if PreauthResponse.status_code == 200:
+        if DelegateAuthResponse.status_code == 200:
             delegateAuthResponseData = jsonResponseData["DelegateAuthResponse"]
 
-            preauthToken = delegateAuthResponseData["authToken"][0]["_content"]
+            authToken = delegateAuthResponseData["authToken"][0]["_content"]
+            url = self.__Host + f"/service/preauth?authtoken={authToken}&isredirect=1"
 
             result.SetData(
                 {
-                    "url": self.__Host
-                    + f"/service/preauth?authtoken={preauthToken}&isredirect=1"
+                    "authToken": authToken,
+                    "url": url,
                 }
             )
         else:

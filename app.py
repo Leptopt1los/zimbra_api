@@ -242,8 +242,8 @@ def GetMessages():
     return result
 
 
-@app.route("/getPreauthLink", methods=["POST"])
-def GetPreauthLink():
+@app.route("/delegateAuth", methods=["POST"])
+def DelegateAuth():
     data = request.json
 
     accountID: str = data.get("accountID", "")
@@ -260,7 +260,7 @@ def GetPreauthLink():
     if not check_HMAC(data):
         return ResponseData.GetHMACError().asdict()
 
-    result = Zimbra.GetPreauthLink(accountID, accountName).asdict()
+    result = Zimbra.DelegateAuth(accountID, accountName).asdict()
     return result
 
 
