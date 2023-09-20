@@ -19,6 +19,7 @@ It runs on Flask, uses HMAC based on SHA3_512 signature for the received data
 ### MAILBOX MANAGEMENT
 - `/getMessages (accountName, unreadOnly?, timestamp, hmac_sign)`
 - `/delegateAuth (accountID/accountName, timestamp, hmac_sign)`
+- `/sendMessage (senderAccountName, receiverAccountName, subject?, content?, senderPseudonym?, receiverPseudonym?)`
 ### DISTRIBUTION LIST MANAGEMENT
 - `/getDistributionLists (timestamp, hmac_sign)`
 - `/getDistributionList (distrListID/distrListName, timestamp, hmac_sign)`

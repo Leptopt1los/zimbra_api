@@ -572,6 +572,55 @@ class ZimbraAPI:
 
         return result
 
+    def SendMessage(
+        self,
+        senderAccountName: str,
+        receiverAccountName: str,
+        subject: str = "",
+        content: str = "",
+        senderPseudonym: str = "",
+        receiverPseudonym: str = "",
+    ) -> ResponseData:
+        subject = subject.encode("ascii", errors="xmlcharrefreplace").decode()
+        content = content.encode("ascii", errors="xmlcharrefreplace").decode()
+        senderPseudonym = senderPseudonym.encode("ascii", errors="xmlcharrefreplace").decode()
+        receiverPseudonym = receiverPseudonym.encode("ascii", errors="xmlcharrefreplace").decode()
+        
+        UpdateAuthDataStatus = self.__UpdateAuthData()
+        if UpdateAuthDataStatus.IsError():
+            return UpdateAuthDataStatus
+
+        result = ResponseData()
+
+        RequestData = self.__WrapInSoapTemplate(
+            [
+                '<SendMsgRequest xmlns="urn:zimbraMail">'
+                    f'<m su="{subject}">'
+                        f'<mp ct="text/plain" content="{content}">'"</mp>"
+                        f'<e a="{senderAccountName}" t="f" p="{senderPseudonym}" />'
+                        f'<e a="{receiverAccountName}" t="t" p="{receiverPseudonym}" />'
+                    "</m>"
+                "</SendMsgRequest>"
+            ]
+        )
+
+        SendMessageResponce = requests.post(
+            self.__AdminHost + "/service/admin/soap/SendMsgRequest",
+            data=RequestData,
+            cookies=self.__GetCookies(),
+            verify=False,
+        )
+
+        jsonResponseData = json.loads(SendMessageResponce.text)["Body"]
+
+        if SendMessageResponce.status_code == 200:
+            result.SetData({"id": jsonResponseData["SendMsgResponse"]["m"][0]["id"]})
+        else:
+            result.SetErrorText(jsonResponseData["Fault"]["Reason"]["Text"])
+            result.SetErrorCode(jsonResponseData["Fault"]["Detail"]["Error"]["Code"])
+
+        return result
+
     ################################################## DISTRIBUTION LIST MANAGEMENT ##################################################
 
     def CreateDistributionList(

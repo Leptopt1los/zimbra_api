@@ -264,6 +264,37 @@ def DelegateAuth():
     return result
 
 
+@app.route("/sendMessage", methods=["POST"])
+def SendMessage():
+    data = request.json
+
+    senderAccountName: str = data.get("senderAccountName")
+    receiverAccountName: str = data.get("receiverAccountName")
+    subject: str = data.get("subject", "")
+    content: str = data.get("content", "")
+    senderPseudonym: str = data.get("senderPseudonym", "")
+    receiverPseudonym: str = data.get("receiverPseudonym", "")
+
+    timestamp: str = data.get("timestamp")
+    hmac_sign: str = data.get("hmac_sign")
+
+    if None in [senderAccountName, receiverAccountName, timestamp, hmac_sign]:
+        return ResponseData.GetMissingDataError().asdict()
+
+    if not check_HMAC(data):
+        return ResponseData.GetHMACError().asdict()
+
+    result = Zimbra.SendMessage(
+        senderAccountName,
+        receiverAccountName,
+        subject,
+        content,
+        senderPseudonym,
+        receiverPseudonym,
+    ).asdict()
+    return result
+
+
 ################################################## DISTRIBUTION LIST MANAGEMENT ##################################################
 
 
