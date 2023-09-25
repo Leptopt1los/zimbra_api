@@ -552,7 +552,7 @@ class ZimbraAPI:
             verify=False,
         )
 
-        jsonResponseData = json.loads(PreauthResponse.text)["Body"]
+        jsonResponseData = json.loads(DelegateAuthResponse.text)["Body"]
 
         if DelegateAuthResponse.status_code == 200:
             delegateAuthResponseData = jsonResponseData["DelegateAuthResponse"]
