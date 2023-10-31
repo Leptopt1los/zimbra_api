@@ -483,7 +483,6 @@ class ZimbraAPI:
 
         if GetMessagesResponse.status_code == 200:
             jsonResponseData = json.loads(GetMessagesResponse.text)
-
             data = dict()
 
             messages = list()
@@ -496,12 +495,13 @@ class ZimbraAPI:
 
                     parsedMessage["date"] = message["d"] // 1000
 
-                    if "p" in message["e"][1]:
-                        parsedMessage["sender_name"] = message["e"][1]["p"]
+                    sender = message["e"][-1]
+                    if "p" in sender:
+                        parsedMessage["sender_name"] = sender["p"]
                     else:
-                        parsedMessage["sender_name"] = message["e"][1]["d"]
+                        parsedMessage["sender_name"] = sender["d"]
 
-                    parsedMessage["sender_email"] = message["e"][1]["a"]
+                    parsedMessage["sender_email"] = sender["a"]
                     parsedMessage["subject"] = message["su"]
                     parsedMessage["message"] = message["fr"]
 
