@@ -498,12 +498,17 @@ class ZimbraAPI:
                     sender = message["e"][-1]
                     if "p" in sender:
                         parsedMessage["sender_name"] = sender["p"]
-                    else:
+                    elif "d" in sender:
                         parsedMessage["sender_name"] = sender["d"]
 
-                    parsedMessage["sender_email"] = sender["a"]
-                    parsedMessage["subject"] = message["su"]
-                    parsedMessage["message"] = message["fr"]
+                    if "a" in sender:
+                        parsedMessage["sender_email"] = sender["a"]
+
+                    if 'su' in message:
+                        parsedMessage["subject"] = message["su"]
+
+                    if 'fr' in message:
+                        parsedMessage["message"] = message["fr"]
 
                     messages.append(parsedMessage)
             else:
